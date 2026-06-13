@@ -652,14 +652,18 @@ class Player  {
     }
 
     draw(context) {
-        context.translate((this.anim_pos.x +.5)*tile_size,(this.anim_pos.y +.5)*tile_size);
-        context.rotate(this.anim_angle);
-        drawImgCentered(context, this.img);
-        context.rotate(-this.anim_angle);
-        if (this.stun_timer) this.stun_birds.drawInPlace(context);
-        if (this.hp_bar.show) this.hp_bar.drawInPlace(context);
-        if (this.hitsplat) this.hitsplat.drawInPlace(context);
-        context.translate(-(this.anim_pos.x +.5)*tile_size,-(this.anim_pos.y +.5)*tile_size);
+        context.save();
+        try {
+            context.translate((this.anim_pos.x +.5)*tile_size,(this.anim_pos.y +.5)*tile_size);
+            context.rotate(this.anim_angle);
+            drawImgCentered(context, this.img);
+            context.rotate(-this.anim_angle);
+            if (this.stun_timer) this.stun_birds.drawInPlace(context);
+            if (this.hp_bar.show) this.hp_bar.drawInPlace(context);
+            if (this.hitsplat) this.hitsplat.drawInPlace(context);
+        } finally {
+            context.restore();
+        }
     }
 
 }
@@ -1786,7 +1790,7 @@ function drawEndStats() {
 
 function drawImgCentered(context, img, scale = true) {
     let d_scale = scale ? draw_scale : 1;
-    if (img === null) return;
+    if (!img) return;
     let draw_x = -d_scale*img.width/2;
     let draw_y = -d_scale*img.height/2;
     context.drawImage(img, draw_x, draw_y, d_scale * img.width, d_scale * img.height);
