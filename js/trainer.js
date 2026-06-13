@@ -1108,6 +1108,7 @@ class MagicProjectile {
 
     detonate() {
         this.detonated = true;
+        this.player.hit(25);
     }
 
     animate() {
