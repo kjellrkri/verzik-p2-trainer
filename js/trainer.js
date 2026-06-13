@@ -65,7 +65,7 @@ var booleans = {
 
 var values = {
     "weapon-select": "SCYTHE",
-    "tile-marker-type": "none",
+    "tile-marker-type": "3",
     "color-tile-marker": "#ffffff",
     "color-verzik-marker": "#00ffff",
     "color-melee-marker": "#ff0000",
