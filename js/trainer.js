@@ -80,6 +80,9 @@ var metronome_audio_context = null;
 const unlimited_hp_storage_key = "verzik-unlimited-hp-v1";
 const saved_unlimited_hp = localStorage.getItem(unlimited_hp_storage_key);
 var unlimited_hp_enabled = saved_unlimited_hp === null ? true : saved_unlimited_hp === "true";
+const hmt_acid_pools_storage_key = "verzik-hmt-acid-pools-v1";
+const saved_hmt_acid_pools = localStorage.getItem(hmt_acid_pools_storage_key);
+var hmt_acid_pools_enabled = saved_hmt_acid_pools === null ? true : saved_hmt_acid_pools === "true";
 const true_tile_enabled_storage_key = "verzik-show-true-tile-v1";
 const true_tile_color_storage_key = "verzik-true-tile-color-v1";
 var true_tile_enabled = localStorage.getItem(true_tile_enabled_storage_key) === "true";
@@ -1203,6 +1206,8 @@ class PoisonPool {
 }
 
 function addPoisonPool(tile) {
+    if (!hmt_acid_pools_enabled) return;
+
     let existing = poison_pools.find(pool => pool.tile.dist(tile) === 0);
     if (existing) {
         existing.ticks_remaining = 12;
@@ -1853,6 +1858,15 @@ function updateUnlimitedHp() {
     }
 }
 
+function updateHmtAcidPools() {
+    hmt_acid_pools_enabled = $("hmt-acid-pools-enabled").checked;
+    localStorage.setItem(hmt_acid_pools_storage_key, hmt_acid_pools_enabled);
+    if (!hmt_acid_pools_enabled) {
+        poison_pools = [];
+        draw();
+    }
+}
+
 function updateTrueTile() {
     true_tile_enabled = $("show-true-tile").checked;
     true_tile_color = $("color-true-tile").value;
@@ -1877,6 +1891,7 @@ function initFormData() {
         $("show-path-tiles").checked = booleans["show-path-tiles"];
         $("metronome-enabled").checked = metronome_enabled;
         $("unlimited-hp-enabled").checked = unlimited_hp_enabled;
+        $("hmt-acid-pools-enabled").checked = hmt_acid_pools_enabled;
         $("show-true-tile").checked = true_tile_enabled;
         $("color-true-tile").value = true_tile_color;
         $("color-tile-indicator").value = values["color-tile-indicator"];
@@ -1893,6 +1908,7 @@ function initFormData() {
         booleans["show-path-tiles"] = $("show-path-tiles").checked;
         metronome_enabled = $("metronome-enabled").checked;
         unlimited_hp_enabled = $("unlimited-hp-enabled").checked;
+        hmt_acid_pools_enabled = $("hmt-acid-pools-enabled").checked;
         true_tile_enabled = $("show-true-tile").checked;
         true_tile_color = $("color-true-tile").value;
         values["color-tile-indicator"] = $("color-tile-indicator").value;
