@@ -1210,12 +1210,6 @@ function tickPoisonPools() {
     poison_pools = poison_pools.filter(pool => pool.tick());
 }
 
-function damagePlayerInPoisonPool() {
-    if (poison_pools.some(pool => pool.tile.dist(p1.position) === 0)) {
-        p1.hit(5);
-    }
-}
-
 function drawPoisonPools() {
     for (let pool of poison_pools) pool.draw(ctxt);
 }
@@ -1536,7 +1530,6 @@ function gameTick() {
     tickPoisonPools();
     tickCrabIcon();
     tickPlayers();
-    damagePlayerInPoisonPool();
     tickNPCs();
 }
 
