@@ -1351,7 +1351,7 @@ class MagicProjectile {
             : this.animation_step % 6;
         let image = imgs.magic_projectile[frame_index];
         let pulse = this.detonated ? 1 : 1 + Math.sin(this.animation_step * .9) * .08;
-        let size = tile_size * (this.detonated ? 2.1 : .88) * pulse;
+        let size = tile_size * (this.detonated ? 1.25 : .88) * pulse;
 
         context.save();
         context.drawImage(image, center.x - size / 2, center.y - size / 2, size, size);
