@@ -118,8 +118,19 @@ const hmt_boak_tile_markers = {
     "4,3": {"color":"#ffff00","label":"3"},
     "4,4": {"color":"#ffff00","label":"4"}
 };
+const reg_tob_boak_tile_markers = {
+    "10,5": {"color":"#ffff00","label":"1"},
+    "11,6": {"color":"#ffff00","label":"2, 5"},
+    "9,8": {"color":"#ffff00","label":"3"},
+    "7,9": {"color":"#ffff00","label":"4"},
+    "6,2": {"color":"#ffff00","label":"1"},
+    "4,5": {"color":"#ffff00","label":"2"},
+    "3,4": {"color":"#ffff00","label":"3"},
+    "5,2": {"color":"#ffff00","label":"4"},
+    "3,0": {"color":"#ffff00","label":"5"}
+};
 const saved_ground_marker_preset = localStorage.getItem(ground_marker_preset_storage_key);
-var ground_marker_preset = ["none", "hmt-boak", "custom"].includes(saved_ground_marker_preset)
+var ground_marker_preset = ["none", "hmt-boak", "reg-tob-boak", "custom"].includes(saved_ground_marker_preset)
     ? saved_ground_marker_preset
     : "hmt-boak";
 var custom_tile_markers = loadCustomTileMarkers();
@@ -216,9 +227,13 @@ function setGroundMarkerPreset(preset) {
 
 function updateGroundMarkerPreset() {
     setGroundMarkerPreset($("ground-marker-preset").value);
-    custom_tile_markers = ground_marker_preset === "hmt-boak"
-        ? cloneTileMarkers(hmt_boak_tile_markers)
-        : {};
+    if (ground_marker_preset === "hmt-boak") {
+        custom_tile_markers = cloneTileMarkers(hmt_boak_tile_markers);
+    } else if (ground_marker_preset === "reg-tob-boak") {
+        custom_tile_markers = cloneTileMarkers(reg_tob_boak_tile_markers);
+    } else {
+        custom_tile_markers = {};
+    }
     saveCustomTileMarkers();
     hideTileContextMenu();
     draw();
@@ -230,10 +245,14 @@ function markGroundMarkersAsCustom() {
 }
 
 function getGroundMarkerExportJson() {
+    let preset_names = {
+        "hmt-boak": "HMT BOAK tiles",
+        "reg-tob-boak": "reg TOB BOAK tiles"
+    };
     return JSON.stringify({
         format: "verzik-ground-markers",
         version: 1,
-        name: ground_marker_preset === "hmt-boak" ? "HMT BOAK tiles" : "Custom ground markers",
+        name: preset_names[ground_marker_preset] || "Custom ground markers",
         markers: custom_tile_markers
     }, null, 2);
 }
