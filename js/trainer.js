@@ -1473,14 +1473,7 @@ function drawVisualMetronome() {
     let color = getVisualMetronomePhase() === 3 ? "#e32222" : "#18a83a";
 
     ctxt.save();
-    ctxt.beginPath();
-    ctxt.arc(center.x, center.y, radius, 0, 2 * Math.PI);
-    ctxt.fillStyle = color + "d9";
-    ctxt.fill();
-    ctxt.lineWidth = Math.max(3, radius * .09);
-    ctxt.strokeStyle = "#ffffff";
-    ctxt.stroke();
-    ctxt.fillStyle = "#ffffff";
+    ctxt.fillStyle = color;
     ctxt.strokeStyle = "#000000";
     ctxt.lineWidth = Math.max(3, radius * .08);
     ctxt.font = `bold ${Math.round(radius * 1.15)}px Arial`;
