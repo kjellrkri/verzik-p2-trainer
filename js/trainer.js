@@ -98,7 +98,8 @@ const saved_hmt_acid_pools = localStorage.getItem(hmt_acid_pools_storage_key);
 var hmt_acid_pools_enabled = saved_hmt_acid_pools === null ? true : saved_hmt_acid_pools === "true";
 const true_tile_enabled_storage_key = "verzik-show-true-tile-v1";
 const true_tile_color_storage_key = "verzik-true-tile-color-v1";
-var true_tile_enabled = localStorage.getItem(true_tile_enabled_storage_key) === "true";
+const saved_true_tile_enabled = localStorage.getItem(true_tile_enabled_storage_key);
+var true_tile_enabled = saved_true_tile_enabled === null ? true : saved_true_tile_enabled === "true";
 var true_tile_color = localStorage.getItem(true_tile_color_storage_key) || "#ff0000";
 
 function loadGeneralPreferences() {
