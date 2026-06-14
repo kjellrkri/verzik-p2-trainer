@@ -60,7 +60,8 @@ var booleans = {
     "show-verzik-tiles": true,
     "show-melee-tiles": false,
     "show-tile-indicators": true,
-    "show-path-tiles": false
+    "show-path-tiles": false,
+    "show-xp-drops": false
 };
 
 var values = {
@@ -586,6 +587,7 @@ class Player  {
         this.str = 118;
         this.attack_cd = 0;             //attack cool-down timer in ticks
         this.attack_audio = null;
+        this.xp_drop = null;
         this.stun_timer = 0;
         this.stun_birds = null;
     }
@@ -706,6 +708,10 @@ class Player  {
         let dmg = this.damageDealt();
         this.attack_target.hit(dmg);
         damage_dealt += dmg;
+        this.xp_drop = {
+            damage: dmg,
+            start_tick: ticks
+        };
     }
     
     damageDealt() {
@@ -807,9 +813,32 @@ class Player  {
             if (this.stun_timer) this.stun_birds.drawInPlace(context);
             if (this.hp_bar.show) this.hp_bar.drawInPlace(context);
             if (this.hitsplat) this.hitsplat.drawInPlace(context);
+            this.drawXpDrop(context);
         } finally {
             context.restore();
         }
+    }
+
+    drawXpDrop(context) {
+        if (!booleans["show-xp-drops"] || !this.xp_drop) return;
+
+        let age = ticks - this.xp_drop.start_tick + cycles / cycles_per_tick;
+        if (age >= 3) {
+            this.xp_drop = null;
+            return;
+        }
+
+        context.save();
+        context.globalAlpha = Math.max(0, 1 - age / 3);
+        context.font = `bold ${Math.max(16, Math.round(tile_size * .34))}px Arial`;
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.lineWidth = Math.max(2, Math.round(draw_scale * 3));
+        context.strokeStyle = "#000000";
+        context.fillStyle = "#ffffff";
+        context.strokeText(String(this.xp_drop.damage), 0, 0);
+        context.fillText(String(this.xp_drop.damage), 0, 0);
+        context.restore();
     }
 
 }
@@ -2131,6 +2160,7 @@ function initFormData() {
         $("show-melee-tiles").checked = booleans["show-melee-tiles"];
         $("show-tile-indicators").checked = booleans["show-tile-indicators"];
         $("show-path-tiles").checked = booleans["show-path-tiles"];
+        $("show-xp-drops").checked = booleans["show-xp-drops"];
         $("metronome-enabled").checked = metronome_enabled;
         $("visual-metronome-enabled").checked = visual_metronome_enabled;
         $("visual-danger-tick").value = String(visual_danger_tick);
@@ -2151,6 +2181,7 @@ function initFormData() {
         booleans["show-melee-tiles"] = $("show-melee-tiles").checked;
         booleans["show-tile-indicators"] = $("show-tile-indicators").checked;
         booleans["show-path-tiles"] = $("show-path-tiles").checked;
+        booleans["show-xp-drops"] = $("show-xp-drops").checked;
         metronome_enabled = $("metronome-enabled").checked;
         visual_metronome_enabled = $("visual-metronome-enabled").checked;
         visual_danger_tick = Number($("visual-danger-tick").value);
