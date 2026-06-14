@@ -80,6 +80,9 @@ var metronome_audio_context = null;
 const visual_metronome_storage_key = "verzik-visual-metronome-v1";
 const saved_visual_metronome = localStorage.getItem(visual_metronome_storage_key);
 var visual_metronome_enabled = saved_visual_metronome === null ? true : saved_visual_metronome === "true";
+const visual_danger_tick_storage_key = "verzik-visual-danger-tick-v1";
+const saved_visual_danger_tick = Number(localStorage.getItem(visual_danger_tick_storage_key));
+var visual_danger_tick = [1, 2, 3, 4].includes(saved_visual_danger_tick) ? saved_visual_danger_tick : 3;
 const unlimited_hp_storage_key = "verzik-unlimited-hp-v1";
 const saved_unlimited_hp = localStorage.getItem(unlimited_hp_storage_key);
 var unlimited_hp_enabled = saved_unlimited_hp === null ? true : saved_unlimited_hp === "true";
@@ -1430,8 +1433,13 @@ function drawCrabIcon() {
     ctxt.restore();
 }
 
-function getVisualMetronomeTick() {
+function getVisualMetronomePhase() {
     return ticks === 0 ? 1 : ((ticks - 1) % 4) + 1;
+}
+
+function getVisualMetronomeTick() {
+    let phase = getVisualMetronomePhase();
+    return ((phase + visual_danger_tick) % 4) + 1;
 }
 
 function drawVisualMetronome() {
@@ -1440,7 +1448,7 @@ function drawVisualMetronome() {
     let tick = getVisualMetronomeTick();
     let center = verzik.getCenterPixel();
     let radius = Math.max(22, tile_size * .36);
-    let color = tick === 3 ? "#e32222" : "#18a83a";
+    let color = getVisualMetronomePhase() === 3 ? "#e32222" : "#18a83a";
 
     ctxt.save();
     ctxt.beginPath();
@@ -2075,6 +2083,12 @@ function updateVisualMetronome() {
     draw();
 }
 
+function updateVisualDangerTick() {
+    visual_danger_tick = Number($("visual-danger-tick").value);
+    localStorage.setItem(visual_danger_tick_storage_key, visual_danger_tick);
+    draw();
+}
+
 function updateUnlimitedHp() {
     unlimited_hp_enabled = $("unlimited-hp-enabled").checked;
     localStorage.setItem(unlimited_hp_storage_key, unlimited_hp_enabled);
@@ -2119,6 +2133,7 @@ function initFormData() {
         $("show-path-tiles").checked = booleans["show-path-tiles"];
         $("metronome-enabled").checked = metronome_enabled;
         $("visual-metronome-enabled").checked = visual_metronome_enabled;
+        $("visual-danger-tick").value = String(visual_danger_tick);
         $("unlimited-hp-enabled").checked = unlimited_hp_enabled;
         $("hmt-acid-pools-enabled").checked = hmt_acid_pools_enabled;
         $("show-true-tile").checked = true_tile_enabled;
@@ -2138,6 +2153,7 @@ function initFormData() {
         booleans["show-path-tiles"] = $("show-path-tiles").checked;
         metronome_enabled = $("metronome-enabled").checked;
         visual_metronome_enabled = $("visual-metronome-enabled").checked;
+        visual_danger_tick = Number($("visual-danger-tick").value);
         unlimited_hp_enabled = $("unlimited-hp-enabled").checked;
         hmt_acid_pools_enabled = $("hmt-acid-pools-enabled").checked;
         true_tile_enabled = $("show-true-tile").checked;

@@ -101,6 +101,14 @@
                             <span><input type="checkbox" id="visual-metronome-enabled" onchange="updateVisualMetronome()">
                                 <label for="visual-metronome-enabled">Visual 4 tick metronome</label></span></div>
                         <div class="form-line">
+                            <span><label for="visual-danger-tick">Danger tick</label>
+                                <select id="visual-danger-tick" onchange="updateVisualDangerTick()">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select></span></div>
+                        <div class="form-line">
                             <span><input type="checkbox" id="unlimited-hp-enabled" onchange="updateUnlimitedHp()">
                                 <label for="unlimited-hp-enabled">Unlimited player and Verzik HP</label></span></div>
                         <div class="form-line">
@@ -130,6 +138,6 @@
                 </div>
             </div>
         </div>
-        <script type="text/javascript" src="js/trainer.js?v=20260614-visual-metronome"></script>
+        <script type="text/javascript" src="js/trainer.js?v=20260614-danger-tick-alignment"></script>
     </body>
 </html>
