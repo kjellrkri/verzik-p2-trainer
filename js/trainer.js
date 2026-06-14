@@ -8,7 +8,7 @@ var numAssetsToLoad = 0;
 var imgs = {};
 const img_ = {
     tile_board: "",
-    crab: ["0","1","2","3","4","5","6","7","8","9"],
+    crab: "",
     acid_splat: "",
     magic_projectile: ["0","1","2","3","4","5","6","7","8","9","10"],
     whip: {idle: "", attack: ["0","1","2","3","4","5","6","7","8","9"]},
@@ -1418,20 +1418,18 @@ function tickCrabIcon() {
 }
 
 function drawCrabIcon() {
-    if (crab_icon_ticks_remaining <= 0 || !imgs.crab?.length) return;
+    if (crab_icon_ticks_remaining <= 0 || !imgs.crab) return;
 
     let old_size = Math.max(48, Math.min(82, tile_size * .72));
     let size = Math.min(old_size * 3, canvas.width - 28, canvas.height - 28);
-    let age_in_cycles = (12 - crab_icon_ticks_remaining) * cycles_per_tick + cycles;
-    let crab_frame = imgs.crab[age_in_cycles % imgs.crab.length];
-    let aspect_ratio = crab_frame.width / crab_frame.height;
+    let aspect_ratio = imgs.crab.width / imgs.crab.height;
     let draw_width = aspect_ratio >= 1 ? size : size * aspect_ratio;
     let draw_height = aspect_ratio >= 1 ? size / aspect_ratio : size;
     let x = canvas.width - draw_width - 14;
     let y = 14;
 
     ctxt.save();
-    ctxt.drawImage(crab_frame, x, y, draw_width, draw_height);
+    ctxt.drawImage(imgs.crab, x, y, draw_width, draw_height);
     ctxt.restore();
 }
 
