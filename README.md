@@ -11,8 +11,7 @@ The original MIT license is included in `LICENSE.md`.
 - Verzik movement and attack timing practice
 - Scythe and whip modes
 - Custom floor markers with labels and colors
-- Bundled 22-tile default practice layout
-- Preset color palette, last-used color, and full color wheel
+- Ground markers presets for HMT and regualr boak
 - Optional true-tile indicator
 - Optional game-tick metronome
 - Optional unlimited HP
