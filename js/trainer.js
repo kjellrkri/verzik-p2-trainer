@@ -83,7 +83,7 @@ var visual_metronome_enabled = saved_visual_metronome === null ? true : saved_vi
 const visual_danger_tick_storage_key = "verzik-visual-danger-tick-v1";
 const saved_visual_danger_tick = Number(localStorage.getItem(visual_danger_tick_storage_key));
 var visual_danger_tick = [1, 2, 3, 4].includes(saved_visual_danger_tick) ? saved_visual_danger_tick : 3;
-const unlimited_hp_storage_key = "verzik-unlimited-hp-v1";
+const unlimited_hp_storage_key = "verzik-unlimited-hp-v2";
 const saved_unlimited_hp = localStorage.getItem(unlimited_hp_storage_key);
 var unlimited_hp_enabled = saved_unlimited_hp === null ? true : saved_unlimited_hp === "true";
 const hmt_acid_pools_storage_key = "verzik-hmt-acid-pools-v1";
