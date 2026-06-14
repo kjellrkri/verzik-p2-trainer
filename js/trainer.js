@@ -75,6 +75,7 @@ var values = {
 
 var ping = 50;
 var volume = 50;
+const general_preferences_storage_key = "verzik-general-preferences-v1";
 const metronome_storage_key = "verzik-game-tick-metronome-v1";
 var metronome_enabled = localStorage.getItem(metronome_storage_key) === "true";
 var metronome_audio_context = null;
@@ -94,6 +95,56 @@ const true_tile_enabled_storage_key = "verzik-show-true-tile-v1";
 const true_tile_color_storage_key = "verzik-true-tile-color-v1";
 var true_tile_enabled = localStorage.getItem(true_tile_enabled_storage_key) === "true";
 var true_tile_color = localStorage.getItem(true_tile_color_storage_key) || "#ff0000";
+
+function loadGeneralPreferences() {
+    try {
+        let saved = JSON.parse(localStorage.getItem(general_preferences_storage_key));
+        if (!saved || typeof saved !== "object") return;
+
+        for (let id of Object.keys(booleans)) {
+            if (typeof saved.booleans?.[id] === "boolean") booleans[id] = saved.booleans[id];
+        }
+
+        if (["SCYTHE", "WHIP"].includes(saved.values?.["weapon-select"])) {
+            values["weapon-select"] = saved.values["weapon-select"];
+        }
+        if (["none", "1", "2", "3"].includes(saved.values?.["tile-marker-type"])) {
+            values["tile-marker-type"] = saved.values["tile-marker-type"];
+        }
+        for (let id of [
+            "color-tile-marker",
+            "color-verzik-marker",
+            "color-melee-marker",
+            "color-tile-indicator"
+        ]) {
+            if (/^#[0-9a-f]{6}$/i.test(saved.values?.[id])) {
+                values[id] = saved.values[id].toLowerCase();
+            }
+        }
+
+        let saved_ping = Number(saved.ping);
+        let saved_volume = Number(saved.volume);
+        if (saved_ping >= 10 && saved_ping <= 350) ping = saved_ping;
+        if (saved_volume >= 0 && saved_volume <= 100) volume = saved_volume;
+    } catch (error) {
+        console.warn("Could not load general preferences.", error);
+    }
+}
+
+function saveGeneralPreferences() {
+    try {
+        localStorage.setItem(general_preferences_storage_key, JSON.stringify({
+            booleans: booleans,
+            values: values,
+            ping: Number(ping),
+            volume: Number(volume)
+        }));
+    } catch (error) {
+        console.warn("Could not save general preferences.", error);
+    }
+}
+
+loadGeneralPreferences();
 
 var canvas = $("tile-board");
 var ctxt = canvas.getContext("2d");
@@ -2069,16 +2120,19 @@ function drawImgCentered(context, img, scale = true) {
 
 function updateBoolean(id) {
     booleans[id] = $(id).checked;
+    saveGeneralPreferences();
     if (paused) draw();
 }
 
 function updateValue(id) {
     values[id] = $(id).value;
+    saveGeneralPreferences();
     if (paused) draw();
 }
 
 function updateWeaponSelect(id) {
     values[id] = $(id).value;
+    saveGeneralPreferences();
     if (p1) p1.weapon = weapons[values[id]];
     if (paused) draw();
 }
@@ -2086,6 +2140,7 @@ function updateWeaponSelect(id) {
 function updatePing() {
     ping = $("ping-select").value;
     $("ping-display").innerHTML = ping + " ms";
+    saveGeneralPreferences();
 }
 
 function updateVolume() {
@@ -2096,6 +2151,7 @@ function updateVolume() {
     }
     
     $("volume-display").innerHTML = volume + "%";
+    saveGeneralPreferences();
 }
 
 function updateMetronome() {
@@ -2146,57 +2202,30 @@ function updateTrueTile() {
     draw();
 }
 
-/**
- * On a new page load, initializes the form data with default values.
- *
- * On a page refresh, loads the data already in the form.
- *
- */
 function initFormData() {
-    if ($("refreshed").value === "0") { //page was newly loaded :: init form data
-        $("weapon-select").value = values["weapon-select"];
-        $("tile-marker-type").value = values["tile-marker-type"];
-        $("ground-marker-preset").value = ground_marker_preset;
-        $("show-verzik-tiles").checked = booleans["show-verzik-tiles"];
-        $("show-melee-tiles").checked = booleans["show-melee-tiles"];
-        $("show-tile-indicators").checked = booleans["show-tile-indicators"];
-        $("show-path-tiles").checked = booleans["show-path-tiles"];
-        $("show-xp-drops").checked = booleans["show-xp-drops"];
-        $("metronome-enabled").checked = metronome_enabled;
-        $("visual-metronome-enabled").checked = visual_metronome_enabled;
-        $("visual-danger-tick").value = String(visual_danger_tick);
-        $("unlimited-hp-enabled").checked = unlimited_hp_enabled;
-        $("hmt-acid-pools-enabled").checked = hmt_acid_pools_enabled;
-        $("show-true-tile").checked = true_tile_enabled;
-        $("color-true-tile").value = true_tile_color;
-        $("color-tile-indicator").value = values["color-tile-indicator"];
-        $("color-verzik-marker").value = values["color-verzik-marker"];
-        $("color-melee-marker").value = values["color-melee-marker"];
-        $("color-tile-marker").value = values["color-tile-marker"];
-        $("refreshed").value = "1"; //set refreshed for next refresh
-    } else {//page was refreshed :: keep and load form data
-        updateWeaponSelect("weapon-select");
-        values["tile-marker-type"] = $("tile-marker-type").value;
-        $("ground-marker-preset").value = ground_marker_preset;
-        booleans["show-verzik-tiles"] = $("show-verzik-tiles").checked;
-        booleans["show-melee-tiles"] = $("show-melee-tiles").checked;
-        booleans["show-tile-indicators"] = $("show-tile-indicators").checked;
-        booleans["show-path-tiles"] = $("show-path-tiles").checked;
-        booleans["show-xp-drops"] = $("show-xp-drops").checked;
-        metronome_enabled = $("metronome-enabled").checked;
-        visual_metronome_enabled = $("visual-metronome-enabled").checked;
-        visual_danger_tick = Number($("visual-danger-tick").value);
-        unlimited_hp_enabled = $("unlimited-hp-enabled").checked;
-        hmt_acid_pools_enabled = $("hmt-acid-pools-enabled").checked;
-        true_tile_enabled = $("show-true-tile").checked;
-        true_tile_color = $("color-true-tile").value;
-        values["color-tile-indicator"] = $("color-tile-indicator").value;
-        values["color-verzik-marker"] = $("color-verzik-marker").value;
-        values["color-melee-marker"] = $("color-melee-marker").value;
-        values["color-tile-marker"] = $("color-tile-marker").value;
-        updatePing(); //need to update ping-display as well
-        updateVolume(); //need to update ping-display as well
-    }
+    $("weapon-select").value = values["weapon-select"];
+    $("tile-marker-type").value = values["tile-marker-type"];
+    $("ground-marker-preset").value = ground_marker_preset;
+    $("show-verzik-tiles").checked = booleans["show-verzik-tiles"];
+    $("show-melee-tiles").checked = booleans["show-melee-tiles"];
+    $("show-tile-indicators").checked = booleans["show-tile-indicators"];
+    $("show-path-tiles").checked = booleans["show-path-tiles"];
+    $("show-xp-drops").checked = booleans["show-xp-drops"];
+    $("metronome-enabled").checked = metronome_enabled;
+    $("visual-metronome-enabled").checked = visual_metronome_enabled;
+    $("visual-danger-tick").value = String(visual_danger_tick);
+    $("unlimited-hp-enabled").checked = unlimited_hp_enabled;
+    $("hmt-acid-pools-enabled").checked = hmt_acid_pools_enabled;
+    $("show-true-tile").checked = true_tile_enabled;
+    $("color-true-tile").value = true_tile_color;
+    $("color-tile-indicator").value = values["color-tile-indicator"];
+    $("color-verzik-marker").value = values["color-verzik-marker"];
+    $("color-melee-marker").value = values["color-melee-marker"];
+    $("color-tile-marker").value = values["color-tile-marker"];
+    $("ping-select").value = String(ping);
+    $("ping-display").innerHTML = ping + " ms";
+    $("volume-select").value = String(volume);
+    $("volume-display").innerHTML = volume + "%";
 }
 
 function reset() {
