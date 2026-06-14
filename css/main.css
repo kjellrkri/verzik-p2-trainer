@@ -167,6 +167,64 @@ h3 {
     flex-wrap: wrap;
 }
 
+.marker-transfer-buttons {
+    gap: 6px;
+    justify-content: flex-start;
+    margin: 4px 0 8px;
+}
+
+.marker-json-panel {
+    position: fixed;
+    z-index: 2000;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: #0009;
+}
+
+.marker-json-panel.visible {
+    display: flex;
+}
+
+.marker-json-card {
+    width: min(680px, calc(100vw - 32px));
+    padding: 14px;
+    border: 1px solid #777;
+    border-radius: 6px;
+    background: #f5f5f5;
+    box-shadow: 0 6px 24px #0008;
+}
+
+.marker-json-card h3 {
+    margin-top: 0;
+}
+
+#marker-json-text {
+    box-sizing: border-box;
+    width: 100%;
+    height: min(52vh, 420px);
+    resize: vertical;
+    font: 13px/1.35 Consolas, monospace;
+}
+
+.marker-json-status {
+    min-height: 1.2em;
+    margin: 6px 0;
+    color: #126b19;
+}
+
+.marker-json-status.error {
+    color: #b00020;
+}
+
+.marker-json-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
 .flex-container .form-box {
     padding: 10px 10px;
 }

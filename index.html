@@ -57,7 +57,13 @@
                                 <select id="ground-marker-preset" onchange="updateGroundMarkerPreset()">
                                     <option value="none">none</option>
                                     <option value="hmt-boak">HMT BOAK tiles</option>
+                                    <option value="custom" hidden>Custom / imported</option>
                                 </select></span></div>
+                        <div class="form-line marker-transfer-buttons">
+                            <button type="button" id="import-ground-markers">Import JSON</button>
+                            <button type="button" id="export-ground-markers">Export JSON</button>
+                            <input type="file" id="ground-marker-file-input" accept=".json,application/json" hidden>
+                        </div>
                         <div class="form-line">
                             <span><input type="checkbox" id="show-verzik-tiles" onchange="updateBoolean(this.id)">
                                 <label for="show-verzik-tiles">Show Verzik tiles</label></span>
@@ -104,6 +110,22 @@
                 <button id="reset_btn" onclick="reset()">Reset Verzik</button>
             </p>
         </div>
-        <script type="text/javascript" src="js/trainer.js?v=20260614-ground-presets"></script>
+        <div id="marker-json-panel" class="marker-json-panel" role="dialog" aria-modal="true"
+             aria-labelledby="marker-json-title">
+            <div class="marker-json-card">
+                <h3 id="marker-json-title">Ground marker JSON</h3>
+                <p id="marker-json-help"></p>
+                <textarea id="marker-json-text" spellcheck="false"></textarea>
+                <p id="marker-json-status" class="marker-json-status" aria-live="polite"></p>
+                <div class="marker-json-actions">
+                    <button type="button" id="choose-marker-json-file">Choose JSON file</button>
+                    <button type="button" id="copy-marker-json">Copy JSON</button>
+                    <button type="button" id="download-marker-json">Download JSON</button>
+                    <button type="button" id="apply-marker-json">Load JSON</button>
+                    <button type="button" id="close-marker-json">Close</button>
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript" src="js/trainer.js?v=20260614-marker-json-transfer"></script>
     </body>
 </html>

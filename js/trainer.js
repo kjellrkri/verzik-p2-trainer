@@ -119,7 +119,9 @@ const hmt_boak_tile_markers = {
     "4,4": {"color":"#ffff00","label":"4"}
 };
 const saved_ground_marker_preset = localStorage.getItem(ground_marker_preset_storage_key);
-var ground_marker_preset = saved_ground_marker_preset === "none" ? "none" : "hmt-boak";
+var ground_marker_preset = ["none", "hmt-boak", "custom"].includes(saved_ground_marker_preset)
+    ? saved_ground_marker_preset
+    : "hmt-boak";
 var custom_tile_markers = loadCustomTileMarkers();
 var context_menu_tile = null;
 const last_used_color_storage_key = "verzik-last-used-color-v1";
@@ -130,6 +132,7 @@ const preset_colors = [
 var last_used_color = localStorage.getItem(last_used_color_storage_key) || "#ffff00";
 var active_color_input = null;
 var active_color_previous = null;
+var marker_json_mode = "export";
 
 
 /// variables that are reset with reset();
@@ -204,9 +207,15 @@ function saveCustomTileMarkers() {
     }
 }
 
-function updateGroundMarkerPreset() {
-    ground_marker_preset = $("ground-marker-preset").value;
+function setGroundMarkerPreset(preset) {
+    ground_marker_preset = preset;
     localStorage.setItem(ground_marker_preset_storage_key, ground_marker_preset);
+    let select = $("ground-marker-preset");
+    if (select) select.value = ground_marker_preset;
+}
+
+function updateGroundMarkerPreset() {
+    setGroundMarkerPreset($("ground-marker-preset").value);
     custom_tile_markers = ground_marker_preset === "hmt-boak"
         ? cloneTileMarkers(hmt_boak_tile_markers)
         : {};
@@ -214,6 +223,95 @@ function updateGroundMarkerPreset() {
     hideTileContextMenu();
     draw();
     canvas.focus();
+}
+
+function markGroundMarkersAsCustom() {
+    setGroundMarkerPreset("custom");
+}
+
+function getGroundMarkerExportJson() {
+    return JSON.stringify({
+        format: "verzik-ground-markers",
+        version: 1,
+        name: ground_marker_preset === "hmt-boak" ? "HMT BOAK tiles" : "Custom ground markers",
+        markers: custom_tile_markers
+    }, null, 2);
+}
+
+function validateImportedGroundMarkers(data) {
+    let markers = data && data.format === "verzik-ground-markers" ? data.markers : data;
+    if (!markers || typeof markers !== "object" || Array.isArray(markers)) {
+        throw new Error("JSON must contain a markers object.");
+    }
+
+    let validated = {};
+    for (let key of Object.keys(markers)) {
+        let match = /^(\d+),(\d+)$/.exec(key);
+        if (!match) throw new Error(`Invalid tile coordinate: ${key}`);
+        let x = Number(match[1]);
+        let y = Number(match[2]);
+        if (x < 0 || x >= board_width || y < 0 || y >= board_height) {
+            throw new Error(`Tile ${key} is outside the board.`);
+        }
+
+        let marker = markers[key];
+        if (!marker || typeof marker !== "object" || Array.isArray(marker)) {
+            throw new Error(`Invalid marker data for tile ${key}.`);
+        }
+        let color = typeof marker.color === "string" ? marker.color.toLowerCase() : "";
+        if (!/^#[0-9a-f]{6}$/.test(color)) {
+            throw new Error(`Invalid color for tile ${key}.`);
+        }
+        let label = marker.label === undefined || marker.label === null ? "" : String(marker.label);
+        validated[key] = {color: color, label: label.trim().slice(0, 40)};
+    }
+    return validated;
+}
+
+function setMarkerJsonStatus(message, is_error = false) {
+    let status = $("marker-json-status");
+    status.textContent = message;
+    status.classList.toggle("error", is_error);
+}
+
+function openMarkerJsonPanel(mode) {
+    marker_json_mode = mode;
+    $("marker-json-title").textContent = mode === "export"
+        ? "Export ground markers"
+        : "Import ground markers";
+    $("marker-json-help").textContent = mode === "export"
+        ? "Copy this JSON or download it to share the current ground markers."
+        : "Paste shared ground-marker JSON below, or choose a JSON file.";
+    $("marker-json-text").value = mode === "export" ? getGroundMarkerExportJson() : "";
+    $("choose-marker-json-file").style.display = mode === "import" ? "inline-block" : "none";
+    $("copy-marker-json").style.display = mode === "export" ? "inline-block" : "none";
+    $("download-marker-json").style.display = mode === "export" ? "inline-block" : "none";
+    $("apply-marker-json").style.display = mode === "import" ? "inline-block" : "none";
+    setMarkerJsonStatus("");
+    $("marker-json-panel").classList.add("visible");
+    $("marker-json-text").focus();
+}
+
+function closeMarkerJsonPanel() {
+    $("marker-json-panel").classList.remove("visible");
+    canvas.focus();
+}
+
+function importGroundMarkerJson(text) {
+    let parsed;
+    try {
+        parsed = JSON.parse(text);
+        custom_tile_markers = validateImportedGroundMarkers(parsed);
+    } catch (error) {
+        setMarkerJsonStatus(error.message || "Could not import this JSON.", true);
+        return false;
+    }
+
+    markGroundMarkersAsCustom();
+    saveCustomTileMarkers();
+    draw();
+    setMarkerJsonStatus(`Loaded ${Object.keys(custom_tile_markers).length} ground markers.`);
+    return true;
 }
 
 function rememberPreviousColor(color) {
@@ -1411,6 +1509,7 @@ document.addEventListener('keydown', function (event) {
     if (event.key === "Escape") {
         hideTileContextMenu();
         hideColorPresetMenu();
+        closeMarkerJsonPanel();
     }
 });
 
@@ -1442,6 +1541,7 @@ function getSelectedCustomTileMarker() {
 }
 
 function refreshAfterMarkerChange() {
+    markGroundMarkersAsCustom();
     saveCustomTileMarkers();
     hideTileContextMenu();
     draw();
@@ -1481,6 +1581,7 @@ $("tile-marker-color-picker").addEventListener("input", function () {
     let marker = getSelectedCustomTileMarker();
     if (!marker) return;
     marker.color = this.value;
+    markGroundMarkersAsCustom();
     saveCustomTileMarkers();
     draw();
 });
@@ -1493,6 +1594,53 @@ $("remove-tile-marker").addEventListener("click", function () {
     if (!context_menu_tile) return;
     delete custom_tile_markers[getCustomTileMarkerKey(context_menu_tile.x, context_menu_tile.y)];
     refreshAfterMarkerChange();
+});
+
+$("import-ground-markers").addEventListener("click", () => openMarkerJsonPanel("import"));
+$("export-ground-markers").addEventListener("click", () => openMarkerJsonPanel("export"));
+$("close-marker-json").addEventListener("click", closeMarkerJsonPanel);
+$("apply-marker-json").addEventListener("click", function () {
+    importGroundMarkerJson($("marker-json-text").value);
+});
+$("choose-marker-json-file").addEventListener("click", function () {
+    $("ground-marker-file-input").click();
+});
+$("ground-marker-file-input").addEventListener("change", function () {
+    let file = this.files && this.files[0];
+    if (!file) return;
+    let reader = new FileReader();
+    reader.onload = function () {
+        $("marker-json-text").value = String(reader.result || "");
+        setMarkerJsonStatus(`Loaded ${file.name}. Click Load JSON to apply it.`);
+    };
+    reader.onerror = function () {
+        setMarkerJsonStatus("Could not read that file.", true);
+    };
+    reader.readAsText(file);
+    this.value = "";
+});
+$("copy-marker-json").addEventListener("click", async function () {
+    let text = $("marker-json-text").value;
+    try {
+        await navigator.clipboard.writeText(text);
+        setMarkerJsonStatus("JSON copied to the clipboard.");
+    } catch (error) {
+        $("marker-json-text").select();
+        setMarkerJsonStatus("Clipboard access was blocked. Press Ctrl+C to copy the selected JSON.", true);
+    }
+});
+$("download-marker-json").addEventListener("click", function () {
+    let blob = new Blob([$("marker-json-text").value], {type: "application/json"});
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement("a");
+    link.href = url;
+    link.download = "verzik-ground-markers.json";
+    link.click();
+    URL.revokeObjectURL(url);
+    setMarkerJsonStatus("JSON file downloaded.");
+});
+$("marker-json-panel").addEventListener("mousedown", function (event) {
+    if (event.target === this) closeMarkerJsonPanel();
 });
 
 canvas.addEventListener('keydown', function (event) {
