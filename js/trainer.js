@@ -836,8 +836,9 @@ class Player  {
         context.lineWidth = Math.max(2, Math.round(draw_scale * 3));
         context.strokeStyle = "#000000";
         context.fillStyle = "#ffffff";
-        context.strokeText(String(this.xp_drop.damage), 0, 0);
-        context.fillText(String(this.xp_drop.damage), 0, 0);
+        let vertical_offset = -age * tile_size;
+        context.strokeText(String(this.xp_drop.damage), 0, vertical_offset);
+        context.fillText(String(this.xp_drop.damage), 0, vertical_offset);
         context.restore();
     }
 
