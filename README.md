@@ -15,5 +15,9 @@ The original MIT license is included in `LICENSE.md`.
 - Optional true-tile indicator
 - Optional game-tick metronome
 - Optional unlimited HP
+- Optioinal xp drops
+- Optional visual metronome
+- Optional audible metronome
 - Basic ranged poison pools
-- Blue magic and crab special attacks
+- Blue sparc spcial attack
+- Crab special attacks
