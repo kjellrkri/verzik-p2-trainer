@@ -27,7 +27,8 @@ const sounds_ = {
     whip: "",
     verzik_range: "",
     verzik_bounce: "",
-    verzik_hit: ""
+    verzik_hit: "",
+    crab_spawn: "crab_spawn.wav"
 };
 
 const cycle_length = 100; // .1 seconds per animation cycle, 10 fps
@@ -1149,7 +1150,9 @@ class NPC {
         this.range_att = false;
         this.range_bomb = null;
         this.animation_frames = [...imgs.verzik.attack];
-        playWebSwooshSound();
+        let crab_audio = sounds.crab_spawn.cloneNode();
+        crab_audio.volume = volume / 100;
+        crab_audio.play();
         console.log("Crab special attack!");
     }
 
@@ -2304,7 +2307,7 @@ function preloadImages(obj_src, obj_img, prefix, ext) {
 function preloadAudio(obj_src, obj_sound, prefix, ext) {
     for (let i in obj_src) {
         if (typeof obj_src[i] === "string") {
-            let src = `${prefix}${i}${ext}`;
+            let src = obj_src[i] ? `${prefix}${obj_src[i]}` : `${prefix}${i}${ext}`;
             obj_sound[i] = new Audio();
             obj_sound[i].volume = volume/300;
             obj_sound[i].addEventListener('canplaythrough', ()=>{numAssetsToLoad -= 1;}, false);
