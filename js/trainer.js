@@ -77,6 +77,9 @@ var volume = 50;
 const metronome_storage_key = "verzik-game-tick-metronome-v1";
 var metronome_enabled = localStorage.getItem(metronome_storage_key) === "true";
 var metronome_audio_context = null;
+const visual_metronome_storage_key = "verzik-visual-metronome-v1";
+const saved_visual_metronome = localStorage.getItem(visual_metronome_storage_key);
+var visual_metronome_enabled = saved_visual_metronome === null ? true : saved_visual_metronome === "true";
 const unlimited_hp_storage_key = "verzik-unlimited-hp-v1";
 const saved_unlimited_hp = localStorage.getItem(unlimited_hp_storage_key);
 var unlimited_hp_enabled = saved_unlimited_hp === null ? true : saved_unlimited_hp === "true";
@@ -1427,6 +1430,37 @@ function drawCrabIcon() {
     ctxt.restore();
 }
 
+function getVisualMetronomeTick() {
+    return ticks === 0 ? 1 : ((ticks - 1) % 4) + 1;
+}
+
+function drawVisualMetronome() {
+    if (!visual_metronome_enabled || !verzik) return;
+
+    let tick = getVisualMetronomeTick();
+    let center = verzik.getCenterPixel();
+    let radius = Math.max(22, tile_size * .36);
+    let color = tick === 3 ? "#e32222" : "#18a83a";
+
+    ctxt.save();
+    ctxt.beginPath();
+    ctxt.arc(center.x, center.y, radius, 0, 2 * Math.PI);
+    ctxt.fillStyle = color + "d9";
+    ctxt.fill();
+    ctxt.lineWidth = Math.max(3, radius * .09);
+    ctxt.strokeStyle = "#ffffff";
+    ctxt.stroke();
+    ctxt.fillStyle = "#ffffff";
+    ctxt.strokeStyle = "#000000";
+    ctxt.lineWidth = Math.max(3, radius * .08);
+    ctxt.font = `bold ${Math.round(radius * 1.15)}px Arial`;
+    ctxt.textAlign = "center";
+    ctxt.textBaseline = "middle";
+    ctxt.strokeText(String(tick), center.x, center.y + radius * .03);
+    ctxt.fillText(String(tick), center.x, center.y + radius * .03);
+    ctxt.restore();
+}
+
 function getAngleDifference(startAngle, targetAngle) {
     let pi = Math.PI;
     let a = targetAngle - startAngle;
@@ -1755,6 +1789,7 @@ function draw() {
     drawTargetTile();
     drawPlayers();
     drawNPCs();
+    drawVisualMetronome();
     drawClickX();
     drawCrabIcon();
     if (dead || victorious) {
@@ -2034,6 +2069,12 @@ function updateMetronome() {
     }
 }
 
+function updateVisualMetronome() {
+    visual_metronome_enabled = $("visual-metronome-enabled").checked;
+    localStorage.setItem(visual_metronome_storage_key, visual_metronome_enabled);
+    draw();
+}
+
 function updateUnlimitedHp() {
     unlimited_hp_enabled = $("unlimited-hp-enabled").checked;
     localStorage.setItem(unlimited_hp_storage_key, unlimited_hp_enabled);
@@ -2077,6 +2118,7 @@ function initFormData() {
         $("show-tile-indicators").checked = booleans["show-tile-indicators"];
         $("show-path-tiles").checked = booleans["show-path-tiles"];
         $("metronome-enabled").checked = metronome_enabled;
+        $("visual-metronome-enabled").checked = visual_metronome_enabled;
         $("unlimited-hp-enabled").checked = unlimited_hp_enabled;
         $("hmt-acid-pools-enabled").checked = hmt_acid_pools_enabled;
         $("show-true-tile").checked = true_tile_enabled;
@@ -2095,6 +2137,7 @@ function initFormData() {
         booleans["show-tile-indicators"] = $("show-tile-indicators").checked;
         booleans["show-path-tiles"] = $("show-path-tiles").checked;
         metronome_enabled = $("metronome-enabled").checked;
+        visual_metronome_enabled = $("visual-metronome-enabled").checked;
         unlimited_hp_enabled = $("unlimited-hp-enabled").checked;
         hmt_acid_pools_enabled = $("hmt-acid-pools-enabled").checked;
         true_tile_enabled = $("show-true-tile").checked;
