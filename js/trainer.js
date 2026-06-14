@@ -70,7 +70,7 @@ var values = {
     "weapon-select": "SCYTHE",
     "tile-marker-type": "3",
     "color-tile-marker": "#ffffff",
-    "color-verzik-marker": "#00ffff",
+    "color-verzik-marker": "#ff0000",
     "color-melee-marker": "#ff0000",
     "color-tile-indicator": "#ffffff" //add "20" to make semi-transparent
 };
