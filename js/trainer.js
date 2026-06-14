@@ -10,6 +10,7 @@ const img_ = {
     tile_board: "",
     crab: "",
     acid_splat: "",
+    magic_projectile: ["0","1","2","3","4","5","6","7","8","9","10"],
     whip: {idle: "", attack: ["0","1","2","3","4","5","6","7","8","9"]},
     scythe: {idle: "", attack: ["0","1","2","3","4","5","6","7","8","9"]},
     birds: ["0","1","2","3","4","5"],
@@ -1337,15 +1338,18 @@ class MagicProjectile {
         this.anim_pos = new Point(this.npc_center.x, this.npc_center.y);
         this.detonated = false;
         this.animation_step = 0;
+        this.impact_step = -1;
     }
 
     detonate() {
         this.detonated = true;
+        this.impact_step = -1;
     }
 
     animate() {
         this.animation_step += 1;
         if (this.detonated) {
+            this.impact_step += 1;
             this.anim_pos = this.player.getAnimCenter();
             return;
         }
@@ -1358,25 +1362,18 @@ class MagicProjectile {
     }
 
     draw(context) {
+        if (this.detonated && this.impact_step >= imgs.magic_projectile.length) return;
+
         let center = new Point(this.anim_pos.x * tile_size, this.anim_pos.y * tile_size);
-        let pulse = 1 + Math.sin(this.animation_step * .9) * .12;
-        let radius = tile_size * (this.detonated ? .34 : .16) * pulse;
+        let frame_index = this.detonated
+            ? Math.max(0, this.impact_step)
+            : this.animation_step % 6;
+        let image = imgs.magic_projectile[frame_index];
+        let pulse = this.detonated ? 1 : 1 + Math.sin(this.animation_step * .9) * .08;
+        let size = tile_size * (this.detonated ? 1.05 : .44) * pulse;
 
         context.save();
-        context.shadowColor = "#32b8ff";
-        context.shadowBlur = tile_size * .18;
-        context.beginPath();
-        context.arc(center.x, center.y, radius * 1.5, 0, 2 * Math.PI);
-        context.fillStyle = this.detonated ? "#168cff70" : "#006edb80";
-        context.fill();
-        context.beginPath();
-        context.arc(center.x, center.y, radius, 0, 2 * Math.PI);
-        context.fillStyle = "#2f9dff";
-        context.fill();
-        context.beginPath();
-        context.arc(center.x - radius * .25, center.y - radius * .25, radius * .4, 0, 2 * Math.PI);
-        context.fillStyle = "#c8efff";
-        context.fill();
+        context.drawImage(image, center.x - size / 2, center.y - size / 2, size, size);
         context.restore();
     }
 }
