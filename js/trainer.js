@@ -57,7 +57,7 @@ const weapons = {
 };
 
 var booleans = {
-    "show-verzik-tiles": false,
+    "show-verzik-tiles": true,
     "show-melee-tiles": false,
     "show-tile-indicators": true,
     "show-path-tiles": false
