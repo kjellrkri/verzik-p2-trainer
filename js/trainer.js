@@ -104,7 +104,7 @@ const hmt_boak_tile_markers = {
     "12,8": {"color":"#00c853","label":"3"},
     "11,8": {"color":"#00c853","label":"7"},
     "7,8": {"color":"#ffff00","label":""},
-    "10,9": {"color":"#00ff4c","label":"4"},
+    "10,9": {"color":"#00c853","label":"4"},
     "8,8": {"color":"#00c853","label":"5"},
     "10,10": {"color":"#00c853","label":"6"},
     "7,5": {"color":"#ff0000","label":"x"},
