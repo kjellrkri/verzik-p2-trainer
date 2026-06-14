@@ -92,8 +92,9 @@ var canvas = $("tile-board");
 var ctxt = canvas.getContext("2d");
 const custom_tile_marker_storage_key = "verzik-custom-tile-markers-v1";
 const custom_tile_marker_initialized_key = "verzik-custom-tile-markers-initialized-v1";
+const ground_marker_preset_storage_key = "verzik-ground-marker-preset-v1";
 const default_custom_tile_marker_color = "#ffff00";
-const default_custom_tile_markers = {
+const hmt_boak_tile_markers = {
     "11,3": {"color":"#ffff00","label":"2"},
     "10,4": {"color":"#ffff00","label":"X"},
     "11,2": {"color":"#ffff00","label":"1"},
@@ -117,6 +118,8 @@ const default_custom_tile_markers = {
     "4,3": {"color":"#ffff00","label":"3"},
     "4,4": {"color":"#ffff00","label":"4"}
 };
+const saved_ground_marker_preset = localStorage.getItem(ground_marker_preset_storage_key);
+var ground_marker_preset = saved_ground_marker_preset === "none" ? "none" : "hmt-boak";
 var custom_tile_markers = loadCustomTileMarkers();
 var context_menu_tile = null;
 const last_used_color_storage_key = "verzik-last-used-color-v1";
@@ -178,14 +181,18 @@ function loadCustomTileMarkers() {
             return {};
         }
 
-        let defaults = JSON.parse(JSON.stringify(default_custom_tile_markers));
+        let defaults = cloneTileMarkers(hmt_boak_tile_markers);
         localStorage.setItem(custom_tile_marker_storage_key, JSON.stringify(defaults));
         localStorage.setItem(custom_tile_marker_initialized_key, "true");
         return defaults;
     } catch (error) {
         console.warn("Could not load custom tile markers.", error);
-        return JSON.parse(JSON.stringify(default_custom_tile_markers));
+        return cloneTileMarkers(hmt_boak_tile_markers);
     }
+}
+
+function cloneTileMarkers(markers) {
+    return JSON.parse(JSON.stringify(markers));
 }
 
 function saveCustomTileMarkers() {
@@ -195,6 +202,18 @@ function saveCustomTileMarkers() {
     } catch (error) {
         console.warn("Could not save custom tile markers.", error);
     }
+}
+
+function updateGroundMarkerPreset() {
+    ground_marker_preset = $("ground-marker-preset").value;
+    localStorage.setItem(ground_marker_preset_storage_key, ground_marker_preset);
+    custom_tile_markers = ground_marker_preset === "hmt-boak"
+        ? cloneTileMarkers(hmt_boak_tile_markers)
+        : {};
+    saveCustomTileMarkers();
+    hideTileContextMenu();
+    draw();
+    canvas.focus();
 }
 
 function rememberPreviousColor(color) {
@@ -1885,6 +1904,7 @@ function initFormData() {
     if ($("refreshed").value === "0") { //page was newly loaded :: init form data
         $("weapon-select").value = values["weapon-select"];
         $("tile-marker-type").value = values["tile-marker-type"];
+        $("ground-marker-preset").value = ground_marker_preset;
         $("show-verzik-tiles").checked = booleans["show-verzik-tiles"];
         $("show-melee-tiles").checked = booleans["show-melee-tiles"];
         $("show-tile-indicators").checked = booleans["show-tile-indicators"];
@@ -1902,6 +1922,7 @@ function initFormData() {
     } else {//page was refreshed :: keep and load form data
         updateWeaponSelect("weapon-select");
         values["tile-marker-type"] = $("tile-marker-type").value;
+        $("ground-marker-preset").value = ground_marker_preset;
         booleans["show-verzik-tiles"] = $("show-verzik-tiles").checked;
         booleans["show-melee-tiles"] = $("show-melee-tiles").checked;
         booleans["show-tile-indicators"] = $("show-tile-indicators").checked;

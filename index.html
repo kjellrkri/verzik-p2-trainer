@@ -53,6 +53,12 @@
                                 </select></span>
                             <input type="color" id="color-tile-marker" onchange="updateValue(this.id)"></div>
                         <div class="form-line">
+                            <span><label for="ground-marker-preset">Ground marker preset</label>
+                                <select id="ground-marker-preset" onchange="updateGroundMarkerPreset()">
+                                    <option value="none">none</option>
+                                    <option value="hmt-boak">HMT BOAK tiles</option>
+                                </select></span></div>
+                        <div class="form-line">
                             <span><input type="checkbox" id="show-verzik-tiles" onchange="updateBoolean(this.id)">
                                 <label for="show-verzik-tiles">Show Verzik tiles</label></span>
                             <input type="color" id="color-verzik-marker" onchange="updateValue(this.id)"></div>
@@ -98,6 +104,6 @@
                 <button id="reset_btn" onclick="reset()">Reset Verzik</button>
             </p>
         </div>
-        <script type="text/javascript" src="js/trainer.js?v=20260614-marker-style-3"></script>
+        <script type="text/javascript" src="js/trainer.js?v=20260614-ground-presets"></script>
     </body>
 </html>
