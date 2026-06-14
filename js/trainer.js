@@ -1204,7 +1204,9 @@ class NPC {
         if (this.hp_bar.show) this.hp_bar.drawInPlace(context);
         context.translate(-cp.x, -cp.y);
 
-        if (this.range_bomb) this.range_bomb.draw(context);
+        if (this.range_bomb && !(this.range_bomb instanceof MagicProjectile)) {
+            this.range_bomb.draw(context);
+        }
     }
 
     /**
@@ -1370,7 +1372,7 @@ class MagicProjectile {
             : this.animation_step % 6;
         let image = imgs.magic_projectile[frame_index];
         let pulse = this.detonated ? 1 : 1 + Math.sin(this.animation_step * .9) * .08;
-        let size = tile_size * (this.detonated ? 1.05 : .44) * pulse;
+        let size = tile_size * (this.detonated ? 2.1 : .88) * pulse;
 
         context.save();
         context.drawImage(image, center.x - size / 2, center.y - size / 2, size, size);
@@ -1852,6 +1854,7 @@ function draw() {
     drawTargetTile();
     drawPlayers();
     drawNPCs();
+    drawMagicProjectile();
     drawVisualMetronome();
     drawClickX();
     drawCrabIcon();
@@ -2034,6 +2037,12 @@ function drawPlayers() {
 
 function drawNPCs() {
     verzik.draw(ctxt);
+}
+
+function drawMagicProjectile() {
+    if (verzik.range_bomb instanceof MagicProjectile) {
+        verzik.range_bomb.draw(ctxt);
+    }
 }
 
 function drawClickX() {
