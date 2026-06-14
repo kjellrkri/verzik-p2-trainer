@@ -61,7 +61,7 @@ var booleans = {
     "show-melee-tiles": false,
     "show-tile-indicators": true,
     "show-path-tiles": false,
-    "show-xp-drops": false
+    "show-xp-drops": true
 };
 
 var values = {
