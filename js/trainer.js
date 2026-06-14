@@ -8,6 +8,7 @@ var numAssetsToLoad = 0;
 var imgs = {};
 const img_ = {
     tile_board: "",
+    crab: "",
     whip: {idle: "", attack: ["0","1","2","3","4","5","6","7","8","9"]},
     scythe: {idle: "", attack: ["0","1","2","3","4","5","6","7","8","9"]},
     birds: ["0","1","2","3","4","5"],
@@ -1458,59 +1459,18 @@ function tickCrabIcon() {
 }
 
 function drawCrabIcon() {
-    if (crab_icon_ticks_remaining <= 0) return;
+    if (crab_icon_ticks_remaining <= 0 || !imgs.crab) return;
 
     let old_size = Math.max(48, Math.min(82, tile_size * .72));
     let size = Math.min(old_size * 3, canvas.width - 28, canvas.height - 28);
-    let x = canvas.width - size - 14;
+    let aspect_ratio = imgs.crab.width / imgs.crab.height;
+    let draw_width = aspect_ratio >= 1 ? size : size * aspect_ratio;
+    let draw_height = aspect_ratio >= 1 ? size / aspect_ratio : size;
+    let x = canvas.width - draw_width - 14;
     let y = 14;
-    let center_x = x + size / 2;
-    let center_y = y + size / 2;
 
     ctxt.save();
-    ctxt.fillStyle = "#111111b8";
-    ctxt.strokeStyle = "#ffffffc0";
-    ctxt.lineWidth = Math.max(2, size * .025);
-    ctxt.beginPath();
-    ctxt.arc(center_x, center_y, size * .48, 0, 2 * Math.PI);
-    ctxt.fill();
-    ctxt.stroke();
-
-    ctxt.strokeStyle = "#ff9d45";
-    ctxt.fillStyle = "#e95c35";
-    ctxt.lineWidth = Math.max(3, size * .055);
-    ctxt.lineCap = "round";
-
-    for (let side of [-1, 1]) {
-        for (let row = -1; row <= 1; row++) {
-            let start_x = center_x + side * size * .2;
-            let start_y = center_y + row * size * .12;
-            ctxt.beginPath();
-            ctxt.moveTo(start_x, start_y);
-            ctxt.lineTo(center_x + side * size * .42, start_y + row * size * .08);
-            ctxt.stroke();
-        }
-
-        ctxt.beginPath();
-        ctxt.moveTo(center_x + side * size * .22, center_y - size * .17);
-        ctxt.lineTo(center_x + side * size * .39, center_y - size * .34);
-        ctxt.stroke();
-        ctxt.beginPath();
-        ctxt.arc(center_x + side * size * .42, center_y - size * .36, size * .1, 0, 2 * Math.PI);
-        ctxt.fill();
-    }
-
-    ctxt.beginPath();
-    ctxt.ellipse(center_x, center_y + size * .04, size * .28, size * .2, 0, 0, 2 * Math.PI);
-    ctxt.fill();
-    ctxt.stroke();
-
-    ctxt.fillStyle = "#ffffff";
-    for (let side of [-1, 1]) {
-        ctxt.beginPath();
-        ctxt.arc(center_x + side * size * .1, center_y - size * .14, size * .045, 0, 2 * Math.PI);
-        ctxt.fill();
-    }
+    ctxt.drawImage(imgs.crab, x, y, draw_width, draw_height);
     ctxt.restore();
 }
 
