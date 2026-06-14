@@ -29,7 +29,7 @@ const sounds_ = {
     verzik_bounce: "",
     verzik_hit: "",
     crab_spawn: "crab_spawn.wav",
-    magic_spark: "magic_spark.wav"
+    magic_spark: "magic_spark_581.wav"
 };
 
 const cycle_length = 100; // .1 seconds per animation cycle, 10 fps
