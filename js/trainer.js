@@ -28,7 +28,8 @@ const sounds_ = {
     verzik_range: "",
     verzik_bounce: "",
     verzik_hit: "",
-    crab_spawn: "crab_spawn.wav"
+    crab_spawn: "crab_spawn.wav",
+    magic_spark: "magic_spark.wav"
 };
 
 const cycle_length = 100; // .1 seconds per animation cycle, 10 fps
@@ -507,34 +508,6 @@ function playMetronomeTock() {
     gain.connect(audio_context.destination);
     oscillator.start(now);
     oscillator.stop(now + .065);
-}
-
-function playMagicSparkSound() {
-    if (volume <= 0) return;
-    let audio_context = getMetronomeAudioContext();
-    if (!audio_context || audio_context.state !== "running") return;
-
-    let now = audio_context.currentTime;
-    let gain = audio_context.createGain();
-    let high_tone = audio_context.createOscillator();
-    let shimmer = audio_context.createOscillator();
-
-    high_tone.type = "sine";
-    high_tone.frequency.setValueAtTime(950, now);
-    high_tone.frequency.exponentialRampToValueAtTime(2100, now + .09);
-    shimmer.type = "triangle";
-    shimmer.frequency.setValueAtTime(1450, now);
-    shimmer.frequency.exponentialRampToValueAtTime(720, now + .14);
-
-    gain.gain.setValueAtTime(Math.max(.0001, (volume / 100) * .22), now);
-    gain.gain.exponentialRampToValueAtTime(.0001, now + .16);
-    high_tone.connect(gain);
-    shimmer.connect(gain);
-    gain.connect(audio_context.destination);
-    high_tone.start(now);
-    shimmer.start(now + .015);
-    high_tone.stop(now + .16);
-    shimmer.stop(now + .16);
 }
 
 function playWebSwooshSound() {
@@ -1125,7 +1098,9 @@ class NPC {
         if (this.normal_autos_since_magic === 4) {
             this.range_attack_type = "special";
             this.normal_autos_since_magic = 0;
-            playMagicSparkSound();
+            let spark_audio = sounds.magic_spark.cloneNode();
+            spark_audio.volume = volume / 100;
+            spark_audio.play();
             if (!this.crab_special_eligible) {
                 this.blue_specials_since_crab += 1;
                 if (this.blue_specials_since_crab >= 4) {
