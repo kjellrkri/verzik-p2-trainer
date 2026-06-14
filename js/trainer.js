@@ -9,6 +9,7 @@ var imgs = {};
 const img_ = {
     tile_board: "",
     crab: "",
+    acid_splat: "",
     whip: {idle: "", attack: ["0","1","2","3","4","5","6","7","8","9"]},
     scythe: {idle: "", attack: ["0","1","2","3","4","5","6","7","8","9"]},
     birds: ["0","1","2","3","4","5"],
@@ -1392,39 +1393,19 @@ class PoisonPool {
     }
 
     draw(context) {
-        let x = this.tile.x * tile_size;
-        let y = this.tile.y * tile_size;
         let age = 12 - this.ticks_remaining;
-        let wobble = Math.sin((cycles + age * cycles_per_tick) * .7) * tile_size * .02;
+        let pulse = 1 + Math.sin((cycles + age * cycles_per_tick) * .7) * .025;
+        let size = tile_size * 1.1 * pulse;
+        let center_x = (this.tile.x + .5) * tile_size;
+        let center_y = (this.tile.y + .5) * tile_size;
 
         context.save();
-        context.beginPath();
-        context.ellipse(
-                x + tile_size / 2,
-                y + tile_size / 2,
-                tile_size * .39 + wobble,
-                tile_size * .31 - wobble,
-                0,
-                0,
-                2 * Math.PI);
-        context.fillStyle = "#24c43db8";
-        context.fill();
-        context.lineWidth = Math.max(2, tile_size * .025);
-        context.strokeStyle = "#8cff78dd";
-        context.stroke();
-
-        context.fillStyle = "#b7ff8dcc";
-        for (let i = 0; i < 4; i++) {
-            let angle = age * .65 + i * Math.PI / 2;
-            context.beginPath();
-            context.arc(
-                    x + tile_size / 2 + Math.cos(angle) * tile_size * .2,
-                    y + tile_size / 2 + Math.sin(angle) * tile_size * .14,
-                    tile_size * .035,
-                    0,
-                    2 * Math.PI);
-            context.fill();
-        }
+        context.drawImage(
+                imgs.acid_splat,
+                center_x - size / 2,
+                center_y - size / 2,
+                size,
+                size);
         context.restore();
     }
 }
@@ -1874,8 +1855,9 @@ function animatePlayers() {
 }
 
 function draw() {
-    drawTileBoard();
+    drawFloorBase();
     drawPoisonPools();
+    drawFloorMarkers();
     drawTrueTile();
     drawTargetTile();
     drawPlayers();
@@ -1923,8 +1905,16 @@ function strokeRect(x, y, w, h, s) {
 }
 
 function drawTileBoard() {
+    drawFloorBase();
+    drawFloorMarkers();
+}
+
+function drawFloorBase() {
     ctxt.drawImage(imgs.tile_board, 0, 0,
                    imgs.tile_board.width * draw_scale, imgs.tile_board.height * draw_scale);
+}
+
+function drawFloorMarkers() {
     drawTileMarkers();
     drawCustomTileMarkers();
     drawVerzikTiles();
