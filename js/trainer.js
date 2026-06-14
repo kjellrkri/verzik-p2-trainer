@@ -1785,6 +1785,48 @@ $("marker-json-panel").addEventListener("mousedown", function (event) {
     if (event.target === this) closeMarkerJsonPanel();
 });
 
+function openResetSettingsPanel() {
+    $("reset-settings-panel").classList.add("visible");
+    $("cancel-reset-settings").focus();
+}
+
+function closeResetSettingsPanel() {
+    $("reset-settings-panel").classList.remove("visible");
+    $("reset-default-settings").focus();
+}
+
+function restoreDefaultSettings() {
+    let trainer_storage_keys = [
+        general_preferences_storage_key,
+        metronome_storage_key,
+        visual_metronome_storage_key,
+        visual_danger_tick_storage_key,
+        unlimited_hp_storage_key,
+        hmt_acid_pools_storage_key,
+        true_tile_enabled_storage_key,
+        true_tile_color_storage_key,
+        custom_tile_marker_storage_key,
+        custom_tile_marker_initialized_key,
+        ground_marker_preset_storage_key,
+        last_used_color_storage_key
+    ];
+    for (let key of trainer_storage_keys) localStorage.removeItem(key);
+    window.location.reload();
+}
+
+$("reset-default-settings").addEventListener("click", openResetSettingsPanel);
+$("cancel-reset-settings").addEventListener("click", closeResetSettingsPanel);
+$("confirm-reset-settings").addEventListener("click", restoreDefaultSettings);
+$("reset-settings-panel").addEventListener("mousedown", function (event) {
+    if (event.target === this) closeResetSettingsPanel();
+});
+
+document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && $("reset-settings-panel").classList.contains("visible")) {
+        closeResetSettingsPanel();
+    }
+});
+
 canvas.addEventListener('keydown', function (event) {
     if (numAssetsToLoad > 0) return;
     if (event.keyCode===32||event.keyCode===80) { // if space-bar or "P" are down

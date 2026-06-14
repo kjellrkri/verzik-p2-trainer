@@ -8,7 +8,7 @@
 
         <link rel="icon" href="favicon.ico" type="image/x-icon" />
         <link rel="stylesheet" href="css/normalize.css">
-        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/main.css?v=20260614-reset-default-settings">
     </head>
     <body onresize="resize()">
         <div class="canvas-wrapper">
@@ -116,6 +116,9 @@
                         <div class="form-line">
                             <span><input type="checkbox" id="hmt-acid-pools-enabled" onchange="updateHmtAcidPools()">
                                 <label for="hmt-acid-pools-enabled">HMT acid pools</label></span></div>
+                        <div class="form-line reset-settings-row">
+                            <button type="button" id="reset-default-settings">Reset to default settings</button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -140,6 +143,17 @@
                 </div>
             </div>
         </div>
-        <script type="text/javascript" src="js/trainer.js?v=20260614-saved-preferences"></script>
+        <div id="reset-settings-panel" class="marker-json-panel" role="dialog" aria-modal="true"
+             aria-labelledby="reset-settings-title">
+            <div class="marker-json-card reset-settings-card">
+                <h3 id="reset-settings-title">Reset to default settings</h3>
+                <p>Are you sure you want to restore to default settings</p>
+                <div class="marker-json-actions">
+                    <button type="button" id="confirm-reset-settings">Yes</button>
+                    <button type="button" id="cancel-reset-settings">No</button>
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript" src="js/trainer.js?v=20260614-reset-default-settings"></script>
     </body>
 </html>
