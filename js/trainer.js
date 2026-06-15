@@ -66,7 +66,8 @@ var booleans = {
     "show-melee-tiles": false,
     "show-tile-indicators": true,
     "show-path-tiles": false,
-    "show-xp-drops": true
+    "show-xp-drops": true,
+    "weapon-cooldown-metronome": false
 };
 
 var values = {
@@ -843,6 +844,7 @@ class Player  {
             if (this.hp_bar.show) this.hp_bar.drawInPlace(context);
             if (this.hitsplat) this.hitsplat.drawInPlace(context);
             this.drawXpDrop(context);
+            this.drawWeaponCooldown(context);
         } finally {
             context.restore();
         }
@@ -868,6 +870,22 @@ class Player  {
         let vertical_offset = -age * tile_size;
         context.strokeText(String(this.xp_drop.damage), 0, vertical_offset);
         context.fillText(String(this.xp_drop.damage), 0, vertical_offset);
+        context.restore();
+    }
+
+    drawWeaponCooldown(context) {
+        if (!booleans["weapon-cooldown-metronome"] || this.attack_cd <= 0) return;
+
+        context.save();
+        context.font = `bold ${Math.max(16, Math.round(tile_size * .32))}px Arial`;
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.lineWidth = Math.max(2, Math.round(draw_scale * 3));
+        context.strokeStyle = "#000000";
+        context.fillStyle = "#ffff00";
+        let vertical_offset = tile_size * .24;
+        context.strokeText(String(this.attack_cd), 0, vertical_offset);
+        context.fillText(String(this.attack_cd), 0, vertical_offset);
         context.restore();
     }
 
@@ -2181,6 +2199,7 @@ function initFormData() {
     $("show-tile-indicators").checked = booleans["show-tile-indicators"];
     $("show-path-tiles").checked = booleans["show-path-tiles"];
     $("show-xp-drops").checked = booleans["show-xp-drops"];
+    $("weapon-cooldown-metronome").checked = booleans["weapon-cooldown-metronome"];
     $("metronome-enabled").checked = metronome_enabled;
     $("visual-metronome-enabled").checked = visual_metronome_enabled;
     $("visual-danger-tick").value = String(visual_danger_tick);
