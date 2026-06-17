@@ -62,8 +62,8 @@ const weapons = {
     "WHIP": whip
 };
 const spawn_locations = {
-    left: {x: 3, y: 5},
-    right: {x: 11, y: 5}
+    left: {x: 3, y: 5, angle: 0},
+    right: {x: 11, y: 5, angle: Math.PI}
 };
 
 var booleans = {
@@ -2470,6 +2470,7 @@ function reset() {
 
     let spawn_location = spawn_locations[values["spawn-location"]] || spawn_locations.left;
     p1 = new Player(spawn_location);
+    p1.anim_angle = spawn_location.angle;
     verzik = new NPC({x:6, y:4}, 3);
     verzik.target(p1);
     poison_pools = [];
