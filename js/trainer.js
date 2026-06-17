@@ -89,8 +89,9 @@ var metronome_audio_context = null;
 var metronome_scheduler_timer = null;
 var metronome_next_tock_time = 0;
 var metronome_scheduled_oscillators = [];
-const metronome_schedule_interval_ms = 80;
-const metronome_schedule_ahead_seconds = .18;
+const metronome_schedule_interval_ms = 1000;
+const metronome_schedule_ahead_seconds = 6;
+const metronome_cleanup_padding_seconds = .2;
 const visual_metronome_storage_key = "verzik-visual-metronome-v1";
 const saved_visual_metronome = localStorage.getItem(visual_metronome_storage_key);
 var visual_metronome_enabled = saved_visual_metronome === null ? true : saved_visual_metronome === "true";
@@ -521,7 +522,7 @@ function scheduleMetronomeTock(time) {
     metronome_scheduled_oscillators.push(oscillator);
     setTimeout(() => {
         metronome_scheduled_oscillators = metronome_scheduled_oscillators.filter(node => node !== oscillator);
-    }, Math.max(0, (time - audio_context.currentTime + .08) * 1000));
+    }, Math.max(0, (time - audio_context.currentTime + metronome_cleanup_padding_seconds) * 1000));
 }
 
 function getSecondsUntilNextGameTick() {

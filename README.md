@@ -1,6 +1,6 @@
 # Verzik P2 HMT BOAK Trainer
 
-An expansion of the browser-based Verzik Phase 2 practice trainer by lmperium to facilitate practicing BOAK for regular tob and HMT.
+A browser-based OSRS Theatre of Blood Verzik P2 HMT BOAK trainer, expanded from lmperium's Verzik Phase 2 practice trainer to facilitate practicing BOAK for regular TOB and HMT.
 
 Based on the original trainer by
 [lmperium2096](https://github.com/lmperium2096/lmperium2096.github.io/tree/master/verzik_trainer).
