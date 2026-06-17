@@ -165,6 +165,9 @@ loadGeneralPreferences();
 
 var canvas = $("tile-board");
 var ctxt = canvas.getContext("2d");
+var static_layer_canvas = document.createElement("canvas");
+var static_layer_context = static_layer_canvas.getContext("2d");
+var static_layer_dirty = true;
 const custom_tile_marker_storage_key = "verzik-custom-tile-markers-v1";
 const custom_tile_marker_initialized_key = "verzik-custom-tile-markers-initialized-v1";
 const ground_marker_preset_storage_key = "verzik-ground-marker-preset-v1";
@@ -292,6 +295,7 @@ function saveCustomTileMarkers() {
     } catch (error) {
         console.warn("Could not save custom tile markers.", error);
     }
+    markStaticLayerDirty();
 }
 
 function setGroundMarkerPreset(preset) {
@@ -730,12 +734,7 @@ class Player  {
 
         if (this.stun_timer) {
             this.stun_timer--;
-            //log movement
-            if (this.position.dist(this.prev_pos) !== 0) {
-                console.log(`Moved from (${this.prev_pos.x},${this.prev_pos.y}) to (${this.position.x},${this.position.y})`)
-            }
             //save prev position
-            //since stun timer is active, log movement before saving prev_pos
             this.prev_pos = new Point(this.position.x, this.position.y);
             if (this.attack_cd) {
                 this.attack_cd -= 1;
@@ -757,10 +756,6 @@ class Player  {
             if (this.target_tile_server) {
                 if (this.path_tiles.length > 1) this.path_tiles.shift();
                 this.position = this.path_tiles.shift(); //remove first path tile and set this.pos to it
-            }
-            //log movement
-            if (this.position.dist(this.prev_pos) !== 0) {
-                console.log(`Moved from (${this.prev_pos.x},${this.prev_pos.y}) to (${this.position.x},${this.position.y})`)
             }
             //update this.target_tile/_server
             if (this.position.dist(this.target_tile_server) === 0) {
@@ -786,8 +781,6 @@ class Player  {
     }
 
     performAttack() {
-        console.log(`Attack! with ${this.weapon.NAME}`);
-        
         attacks_used += 1;
         
         if (this.weapon === weapons.SCYTHE) {
@@ -1121,8 +1114,6 @@ class NPC {
     }
 
     performAttack() {
-        console.log(`Attack! from verzik`);
-        
         //start tracking efficiency at first attack from verzik
         if (!first_attack) {
             first_attack = true;
@@ -1213,7 +1204,6 @@ class NPC {
         let crab_audio = sounds.crab_spawn.cloneNode();
         crab_audio.volume = volume / 100;
         crab_audio.play();
-        console.log("Crab special attack!");
     }
 
     hit(dmg) {
@@ -1575,6 +1565,7 @@ function resize() {
 
     canvas.width = board_width * tile_size;
     canvas.height = board_height * tile_size;
+    markStaticLayerDirty();
     hideTileContextMenu();
 
     if (paused || dead || victorious) draw();
@@ -1879,7 +1870,7 @@ function tickNPCs() {
 }
 
 function gameCycles() {
-    if (numAssetsToLoad > 0) {console.log("loading...");return;}
+    if (numAssetsToLoad > 0) return;
     
     if (paused) return;
     last_cycle_timestamp = performance.now();
@@ -1896,7 +1887,6 @@ function gameCycles() {
 
 function gameTick() {
     ticks += 1;
-    console.log(`tick ${ticks}`);
     tickPoisonPools();
     tickCrabIcon();
     tickPlayers();
@@ -1917,9 +1907,8 @@ function animatePlayers() {
 }
 
 function draw() {
-    drawFloorBase();
+    drawStaticLayer();
     drawPoisonPools();
-    drawFloorMarkers();
     drawTrueTile();
     drawTargetTile();
     drawPlayers();
@@ -1968,8 +1957,33 @@ function strokeRect(x, y, w, h, s) {
 }
 
 function drawTileBoard() {
+    drawStaticLayer();
+}
+
+function markStaticLayerDirty() {
+    static_layer_dirty = true;
+}
+
+function drawStaticLayer() {
+    updateStaticLayer();
+    ctxt.drawImage(static_layer_canvas, 0, 0);
+}
+
+function updateStaticLayer() {
+    if (static_layer_canvas.width !== canvas.width || static_layer_canvas.height !== canvas.height) {
+        static_layer_canvas.width = canvas.width;
+        static_layer_canvas.height = canvas.height;
+        static_layer_dirty = true;
+    }
+    if (!static_layer_dirty || numAssetsToLoad > 0) return;
+
+    let visible_context = ctxt;
+    ctxt = static_layer_context;
+    ctxt.clearRect(0, 0, static_layer_canvas.width, static_layer_canvas.height);
     drawFloorBase();
     drawFloorMarkers();
+    ctxt = visible_context;
+    static_layer_dirty = false;
 }
 
 function drawFloorBase() {
@@ -2185,12 +2199,19 @@ function drawImgCentered(context, img, scale = true) {
 function updateBoolean(id) {
     booleans[id] = $(id).checked;
     saveGeneralPreferences();
+    if (["show-verzik-tiles", "show-melee-tiles"].includes(id)) markStaticLayerDirty();
     if (paused) draw();
 }
 
 function updateValue(id) {
     values[id] = $(id).value;
     saveGeneralPreferences();
+    if ([
+        "tile-marker-type",
+        "color-tile-marker",
+        "color-verzik-marker",
+        "color-melee-marker"
+    ].includes(id)) markStaticLayerDirty();
     if (paused) draw();
 }
 
@@ -2394,22 +2415,6 @@ function preloadAudio(obj_src, obj_sound, prefix, ext) {
             obj_sound[i].src = src;
         }
     }
-}
-
-function test() {
-    let max = 1000000;
-    let date = new Date();
-    console.log(`${date.getSeconds()}.${date.getMilliseconds()}`);
-//    for (let i = 0; i < max; i++) {
-//    
-//    }
-    date = new Date();
-    console.log(`${date.getSeconds()}.${date.getMilliseconds()}`);
-//    for (let i = 0; i < max; i++) {
-//    
-//    }
-    date = new Date();
-    console.log(`${date.getSeconds()}.${date.getMilliseconds()}`);
 }
 
 window.onload = function () {
