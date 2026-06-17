@@ -209,6 +209,19 @@ input[type="range"] {
     gap: 10px;
 }
 
+.clip-card {
+    display: grid;
+    gap: 6px;
+}
+
+.clip-title {
+    margin: 0;
+    color: #f2efea;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
 .clip-list iframe {
     display: block;
     width: 100%;
