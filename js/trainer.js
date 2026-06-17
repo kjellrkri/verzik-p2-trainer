@@ -22,6 +22,7 @@ const img_ = {
     x: {red: ["0","1","2","3","4"], yellow: ["0","1","2","3","4"]}
 };
 var sounds = {};
+var audio_buffers = {};
 const sounds_ = {
     scythe: "",
     whip: "",
@@ -90,7 +91,7 @@ var metronome_scheduler_timer = null;
 var metronome_next_tock_time = 0;
 var metronome_scheduled_oscillators = [];
 const metronome_schedule_interval_ms = 1000;
-const metronome_schedule_ahead_seconds = 6;
+const metronome_schedule_ahead_seconds = 12;
 const metronome_cleanup_padding_seconds = .2;
 const visual_metronome_storage_key = "verzik-visual-metronome-v1";
 const saved_visual_metronome = localStorage.getItem(visual_metronome_storage_key);
@@ -168,6 +169,8 @@ var ctxt = canvas.getContext("2d");
 var static_layer_canvas = document.createElement("canvas");
 var static_layer_context = static_layer_canvas.getContext("2d");
 var static_layer_dirty = true;
+var scaled_image_cache = new WeakMap();
+var scaled_sprite_cache = {};
 const custom_tile_marker_storage_key = "verzik-custom-tile-markers-v1";
 const custom_tile_marker_initialized_key = "verzik-custom-tile-markers-initialized-v1";
 const ground_marker_preset_storage_key = "verzik-ground-marker-preset-v1";
@@ -248,6 +251,9 @@ var ticks;  //count ticks
 var paused;
 var tick_timer;
 var last_cycle_timestamp;
+var last_frame_timestamp;
+var cycle_accumulator;
+const max_cycles_per_frame = cycles_per_tick;
 
 var p1;
 var verzik;
@@ -504,6 +510,23 @@ function getMetronomeAudioContext() {
         if (AudioContextClass) metronome_audio_context = new AudioContextClass();
     }
     return metronome_audio_context;
+}
+
+function playSound(name, volume_divisor = 300) {
+    let audio_context = getMetronomeAudioContext();
+    let buffer = audio_buffers[name];
+    if (!audio_context || !buffer || volume <= 0) return null;
+
+    if (audio_context.state === "suspended") audio_context.resume();
+
+    let source = audio_context.createBufferSource();
+    let gain = audio_context.createGain();
+    source.buffer = buffer;
+    gain.gain.setValueAtTime(Math.min(1, Math.max(0, volume / volume_divisor)), audio_context.currentTime);
+    source.connect(gain);
+    gain.connect(audio_context.destination);
+    source.start();
+    return source;
 }
 
 function scheduleMetronomeTock(time) {
@@ -792,8 +815,7 @@ class Player  {
         this.attack_cd += this.weapon.CD;
         this.animation_frames = [...imgs[this.weapon.NAME].attack];
 
-        this.attack_audio = sounds[this.weapon.NAME];
-        this.attack_audio.play();
+        this.attack_audio = playSound(this.weapon.NAME);
         let dmg = this.damageDealt();
         this.attack_target.hit(dmg);
         damage_dealt += dmg;
@@ -1165,18 +1187,14 @@ class NPC {
         attack_target.stun(8);
 
         this.animation_frames = [...imgs.verzik.attack]; //TODO add bounce anim
-        this.attack_audio = sounds.verzik_bounce.cloneNode();
-        this.attack_audio.volume = volume/300;
-        this.attack_audio.play();
+        this.attack_audio = playSound("verzik_bounce");
     }
 
     rangeAttack(attack_target) {
         if (this.normal_autos_since_magic === 4) {
             this.range_attack_type = "special";
             this.normal_autos_since_magic = 0;
-            let spark_audio = sounds.magic_spark.cloneNode();
-            spark_audio.volume = volume / 100;
-            spark_audio.play();
+            playSound("magic_spark", 100);
             if (!this.crab_special_eligible) {
                 this.blue_specials_since_crab += 1;
                 if (this.blue_specials_since_crab >= 4) {
@@ -1188,9 +1206,7 @@ class NPC {
             this.normal_autos_since_magic += 1;
         }
         this.animation_frames = [...imgs.verzik.attack];
-        this.attack_audio = sounds.verzik_range.cloneNode();
-        this.attack_audio.volume = volume/300;
-        this.attack_audio.play();
+        this.attack_audio = playSound("verzik_range");
     }
 
     crabAttack() {
@@ -1201,16 +1217,13 @@ class NPC {
         this.range_att = false;
         this.range_bomb = null;
         this.animation_frames = [...imgs.verzik.attack];
-        let crab_audio = sounds.crab_spawn.cloneNode();
-        crab_audio.volume = volume / 100;
-        crab_audio.play();
+        playSound("crab_spawn", 100);
     }
 
     hit(dmg) {
-        let defend_audio = sounds.verzik_hit;
         if (!unlimited_verzik_hp_enabled) this.hp -= dmg;
         this.hp_bar.display();
-        defend_audio.play();
+        playSound("verzik_hit");
         if (this.hp <= 0) victory();
     }
 
@@ -1447,13 +1460,14 @@ class PoisonPool {
     draw(context) {
         let age = 12 - this.ticks_remaining;
         let pulse = 1 + Math.sin((cycles + age * cycles_per_tick) * .7) * .025;
-        let size = tile_size * 1.1 * pulse;
+        let sprite = getScaledSprite("acid_splat", imgs.acid_splat, tile_size * 1.12, tile_size * 1.12);
+        let size = sprite.width * pulse;
         let center_x = (this.tile.x + .5) * tile_size;
         let center_y = (this.tile.y + .5) * tile_size;
 
         context.save();
         context.drawImage(
-                imgs.acid_splat,
+                sprite,
                 center_x - size / 2,
                 center_y - size / 2,
                 size,
@@ -1501,9 +1515,10 @@ function drawCrabIcon() {
     let draw_height = aspect_ratio >= 1 ? size / aspect_ratio : size;
     let x = canvas.width - draw_width - 14;
     let y = 14;
+    let sprite = getScaledSprite("crab", imgs.crab, draw_width, draw_height);
 
     ctxt.save();
-    ctxt.drawImage(imgs.crab, x, y, draw_width, draw_height);
+    ctxt.drawImage(sprite, x, y, draw_width, draw_height);
     ctxt.restore();
 }
 
@@ -1565,6 +1580,7 @@ function resize() {
 
     canvas.width = board_width * tile_size;
     canvas.height = board_height * tile_size;
+    clearScaledRenderCaches();
     markStaticLayerDirty();
     hideTileContextMenu();
 
@@ -1855,9 +1871,6 @@ function generate_path(from, to) {
 function pause_play() {
     paused = !paused;
     $("pause_btn").innerHTML = paused ? "Play" : "Pause";
-    if (paused) {
-        if (verzik.attack_audio) verzik.attack_audio.pause();
-    }
     syncMetronomeScheduler();
 }
 
@@ -1869,11 +1882,45 @@ function tickNPCs() {
     verzik.tick();
 }
 
-function gameCycles() {
-    if (numAssetsToLoad > 0) return;
-    
-    if (paused) return;
-    last_cycle_timestamp = performance.now();
+function startGameLoop() {
+    stopGameLoop();
+    last_frame_timestamp = performance.now();
+    last_cycle_timestamp = last_frame_timestamp;
+    cycle_accumulator = 0;
+    tick_timer = requestAnimationFrame(gameLoopFrame);
+}
+
+function stopGameLoop() {
+    if (tick_timer !== null && tick_timer !== undefined) {
+        cancelAnimationFrame(tick_timer);
+        tick_timer = null;
+    }
+}
+
+function gameLoopFrame(timestamp) {
+    tick_timer = requestAnimationFrame(gameLoopFrame);
+
+    if (numAssetsToLoad > 0 || paused) {
+        last_frame_timestamp = timestamp;
+        return;
+    }
+
+    let delta = timestamp - (last_frame_timestamp || timestamp);
+    last_frame_timestamp = timestamp;
+    cycle_accumulator += Math.min(delta, cycle_length * max_cycles_per_frame);
+
+    let did_update = false;
+    while (cycle_accumulator >= cycle_length) {
+        cycle_accumulator -= cycle_length;
+        runGameCycle(timestamp - cycle_accumulator);
+        did_update = true;
+    }
+
+    if (did_update) draw();
+}
+
+function runGameCycle(cycle_timestamp) {
+    last_cycle_timestamp = cycle_timestamp;
     cycles = (cycles + 1) % cycles_per_tick;
     //game tick every .6 sec, but only after some initial interaction
     if(!cycles && first_click) {
@@ -1882,7 +1929,6 @@ function gameCycles() {
     }
     animatePlayers();
     animateNPCs();
-    draw();
 }
 
 function gameTick() {
@@ -1952,6 +1998,48 @@ function strokeRect(x, y, w, h, s) {
     ctxt.fillRect(x, y, s, h);
     ctxt.fillRect(x, y + h - s, w, s);
     ctxt.fillRect(x + w - s, y, s, h);
+}
+
+function clearScaledRenderCaches() {
+    scaled_image_cache = new WeakMap();
+    scaled_sprite_cache = {};
+}
+
+function makeScaledCanvas(img, width, height) {
+    if (!img || !img.width || !img.height || width <= 0 || height <= 0) return img;
+
+    let canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(width));
+    canvas.height = Math.max(1, Math.round(height));
+    let context = canvas.getContext("2d");
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "low";
+    context.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas;
+}
+
+function getScaledImage(img) {
+    if (!img || !img.width || !img.height || draw_scale === 1) return img;
+
+    let width = Math.max(1, Math.round(img.width * draw_scale));
+    let height = Math.max(1, Math.round(img.height * draw_scale));
+    let cached = scaled_image_cache.get(img);
+    if (cached && cached.width === width && cached.height === height) return cached;
+
+    let scaled = makeScaledCanvas(img, width, height);
+    scaled_image_cache.set(img, scaled);
+    return scaled;
+}
+
+function getScaledSprite(name, img, width, height) {
+    let rounded_width = Math.max(1, Math.round(width));
+    let rounded_height = Math.max(1, Math.round(height));
+    let cached = scaled_sprite_cache[name];
+    if (cached && cached.width === rounded_width && cached.height === rounded_height) return cached;
+
+    let scaled = makeScaledCanvas(img, rounded_width, rounded_height);
+    scaled_sprite_cache[name] = scaled;
+    return scaled;
 }
 
 function roundedRectPath(context, x, y, w, h, r) {
@@ -2148,8 +2236,7 @@ function drawClickX() {
 
 function death() {
     dead = true;
-    clearInterval(tick_timer);
-    tick_timer = null;
+    stopGameLoop();
     stopMetronomeScheduler();
     setTimeout(() => {
         drawTileBoard();
@@ -2161,8 +2248,7 @@ function death() {
 
 function victory() {
     victorious = true;
-    clearInterval(tick_timer);
-    tick_timer = null;
+    stopGameLoop();
     stopMetronomeScheduler();
     setTimeout(() => {
         drawTileBoard();
@@ -2225,11 +2311,15 @@ function drawEndStats() {
 }
 
 function drawImgCentered(context, img, scale = true) {
-    let d_scale = scale ? draw_scale : 1;
     if (!img) return;
-    let draw_x = -d_scale*img.width/2;
-    let draw_y = -d_scale*img.height/2;
-    context.drawImage(img, draw_x, draw_y, d_scale * img.width, d_scale * img.height);
+
+    if (scale) {
+        let scaled_img = getScaledImage(img);
+        context.drawImage(scaled_img, -scaled_img.width / 2, -scaled_img.height / 2);
+        return;
+    }
+
+    context.drawImage(img, -img.width / 2, -img.height / 2);
 }
 
 function updateBoolean(id) {
@@ -2266,11 +2356,7 @@ function updatePing() {
 
 function updateVolume() {
     volume = $("volume-select").value;
-    
-    for (let s in sounds) {
-        sounds[s].volume = volume/300;
-    }
-    
+
     $("volume-display").innerHTML = volume + "%";
     saveGeneralPreferences();
     if (metronome_scheduler_timer) {
@@ -2384,11 +2470,11 @@ function reset() {
     cycles = 0;
     ticks = 0;
     last_cycle_timestamp = performance.now();
+    last_frame_timestamp = last_cycle_timestamp;
+    cycle_accumulator = 0;
     paused = false;
     
-    clearInterval(tick_timer);
-    tick_timer = null;
-    tick_timer = setInterval(gameCycles, cycle_length);
+    startGameLoop();
 }
 
 function init() {
@@ -2445,10 +2531,25 @@ function preloadAudio(obj_src, obj_sound, prefix, ext) {
     for (let i in obj_src) {
         if (typeof obj_src[i] === "string") {
             let src = obj_src[i] ? `${prefix}${obj_src[i]}` : `${prefix}${i}${ext}`;
-            obj_sound[i] = new Audio();
-            obj_sound[i].volume = volume/300;
-            obj_sound[i].addEventListener('canplaythrough', ()=>{numAssetsToLoad -= 1;}, false);
-            obj_sound[i].src = src;
+            let audio_context = getMetronomeAudioContext();
+            if (!audio_context || !window.fetch) {
+                numAssetsToLoad -= 1;
+                continue;
+            }
+
+            fetch(src)
+                .then(response => response.arrayBuffer())
+                .then(data => audio_context.decodeAudioData(data))
+                .then(buffer => {
+                    obj_sound[i] = buffer;
+                    audio_buffers[i] = buffer;
+                })
+                .catch(error => {
+                    console.warn(`Could not preload sound ${src}.`, error);
+                })
+                .finally(() => {
+                    numAssetsToLoad -= 1;
+                });
         }
     }
 }
