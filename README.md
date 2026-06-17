@@ -1,4 +1,4 @@
-# Verzik Phase 2 Trainer
+# Verzik P2 HMT BOAK Trainer
 
 An expansion of the browser-based Verzik Phase 2 practice trainer by lmperium to facilitate practicing BOAK for regular tob and HMT.
 
@@ -14,7 +14,7 @@ The original MIT license is included in `LICENSE.md`.
 - Ground markers presets for HMT and regualr boak
 - Optional true-tile indicator
 - Optional game-tick metronome
-- Optional unlimited HP
+- Optional unlimited player HP and unlimited Verzik HP
 - Optioinal xp drops
 - Optional visual metronome
 - Optional audible metronome

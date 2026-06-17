@@ -98,8 +98,10 @@ const visual_danger_tick_storage_key = "verzik-visual-danger-tick-v1";
 const saved_visual_danger_tick = Number(localStorage.getItem(visual_danger_tick_storage_key));
 var visual_danger_tick = [1, 2, 3, 4].includes(saved_visual_danger_tick) ? saved_visual_danger_tick : 3;
 const unlimited_hp_storage_key = "verzik-unlimited-hp-v2";
-const saved_unlimited_hp = localStorage.getItem(unlimited_hp_storage_key);
-var unlimited_hp_enabled = saved_unlimited_hp === null ? true : saved_unlimited_hp === "true";
+const unlimited_player_hp_storage_key = "verzik-unlimited-player-hp-v1";
+const unlimited_verzik_hp_storage_key = "verzik-unlimited-verzik-hp-v1";
+var unlimited_player_hp_enabled = localStorage.getItem(unlimited_player_hp_storage_key) === "true";
+var unlimited_verzik_hp_enabled = localStorage.getItem(unlimited_verzik_hp_storage_key) === "true";
 const hmt_acid_pools_storage_key = "verzik-hmt-acid-pools-v1";
 const saved_hmt_acid_pools = localStorage.getItem(hmt_acid_pools_storage_key);
 var hmt_acid_pools_enabled = saved_hmt_acid_pools === null ? true : saved_hmt_acid_pools === "true";
@@ -832,7 +834,7 @@ class Player  {
 
     hit(dmg) {
         damage_taken += dmg;
-        if (!unlimited_hp_enabled) this.hp -= dmg;
+        if (!unlimited_player_hp_enabled) this.hp -= dmg;
         this.hp_bar.display();
         this.hitsplat = new HitSplat(dmg);
         setTimeout(()=>{
@@ -1215,7 +1217,7 @@ class NPC {
 
     hit(dmg) {
         let defend_audio = sounds.verzik_hit;
-        if (!unlimited_hp_enabled) this.hp -= dmg;
+        if (!unlimited_verzik_hp_enabled) this.hp -= dmg;
         this.hp_bar.display();
         defend_audio.play();
         if (this.hp <= 0) victory();
@@ -1798,6 +1800,8 @@ function restoreDefaultSettings() {
         visual_metronome_storage_key,
         visual_danger_tick_storage_key,
         unlimited_hp_storage_key,
+        unlimited_player_hp_storage_key,
+        unlimited_verzik_hp_storage_key,
         hmt_acid_pools_storage_key,
         true_tile_enabled_storage_key,
         true_tile_color_storage_key,
@@ -2087,7 +2091,7 @@ function drawTargetTile() {
                 tile_size, tile_size);
         //draw path tiles
         if(booleans["show-path-tiles"]) {
-            ctxt.fillStyle = values["color-path-tile"] + "20";
+            ctxt.fillStyle = values["color-path-tile"] + "14";
             for (let i = 0; i < p1.path_tiles.length; i++) {
                 if (!(i % 2 || i === p1.path_tiles.length - 1)) continue; //skip draw unless i is odd or equal to array length
                 let p = p1.path_tiles[i];
@@ -2240,13 +2244,13 @@ function updateVisualDangerTick() {
 }
 
 function updateUnlimitedHp() {
-    unlimited_hp_enabled = $("unlimited-hp-enabled").checked;
-    localStorage.setItem(unlimited_hp_storage_key, unlimited_hp_enabled);
-    if (unlimited_hp_enabled) {
-        if (p1) p1.hp = p1.max_hp;
-        if (verzik) verzik.hp = verzik.max_hp;
-        if (paused) draw();
-    }
+    unlimited_player_hp_enabled = $("unlimited-player-hp-enabled").checked;
+    unlimited_verzik_hp_enabled = $("unlimited-verzik-hp-enabled").checked;
+    localStorage.setItem(unlimited_player_hp_storage_key, unlimited_player_hp_enabled);
+    localStorage.setItem(unlimited_verzik_hp_storage_key, unlimited_verzik_hp_enabled);
+    if (unlimited_player_hp_enabled && p1) p1.hp = p1.max_hp;
+    if (unlimited_verzik_hp_enabled && verzik) verzik.hp = verzik.max_hp;
+    if (paused) draw();
 }
 
 function updateHmtAcidPools() {
@@ -2279,7 +2283,8 @@ function initFormData() {
     $("metronome-enabled").checked = metronome_enabled;
     $("visual-metronome-enabled").checked = visual_metronome_enabled;
     $("visual-danger-tick").value = String(visual_danger_tick);
-    $("unlimited-hp-enabled").checked = unlimited_hp_enabled;
+    $("unlimited-player-hp-enabled").checked = unlimited_player_hp_enabled;
+    $("unlimited-verzik-hp-enabled").checked = unlimited_verzik_hp_enabled;
     $("hmt-acid-pools-enabled").checked = hmt_acid_pools_enabled;
     $("show-true-tile").checked = true_tile_enabled;
     $("color-true-tile").value = true_tile_color;
