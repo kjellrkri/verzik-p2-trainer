@@ -35,6 +35,7 @@
 html,
 body {
     min-height: 100%;
+    background: var(--bg);
 }
 
 body {
@@ -128,9 +129,14 @@ input[type="range"] {
 .canvas-wrapper {
     position: relative;
     width: 100%;
+    min-height: 100vh;
     max-width: 100%;
     margin: 0 auto;
     padding: 14px;
+    background:
+        radial-gradient(circle at top left, #3b3835 0, transparent 31rem),
+        radial-gradient(circle at bottom left, #3d2522 0, transparent 30rem),
+        linear-gradient(135deg, #080807 0%, #050505 100%);
 }
 
 .flex-container {
