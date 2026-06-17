@@ -1919,8 +1919,6 @@ function draw() {
     drawCrabIcon();
     if (dead || victorious) {
         drawEndStats();
-    } else {
-        drawAtkStats();
     }
 //    drawTestTiles();
 }
@@ -1954,6 +1952,20 @@ function strokeRect(x, y, w, h, s) {
     ctxt.fillRect(x, y, s, h);
     ctxt.fillRect(x, y + h - s, w, s);
     ctxt.fillRect(x + w - s, y, s, h);
+}
+
+function roundedRectPath(context, x, y, w, h, r) {
+    let radius = Math.min(r, w / 2, h / 2);
+    context.moveTo(x + radius, y);
+    context.lineTo(x + w - radius, y);
+    context.quadraticCurveTo(x + w, y, x + w, y + radius);
+    context.lineTo(x + w, y + h - radius);
+    context.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+    context.lineTo(x + radius, y + h);
+    context.quadraticCurveTo(x, y + h, x, y + h - radius);
+    context.lineTo(x, y + radius);
+    context.quadraticCurveTo(x, y, x + radius, y);
+    context.closePath();
 }
 
 function drawTileBoard() {
@@ -2134,16 +2146,6 @@ function drawClickX() {
     click_x.draw(ctxt);
 }
 
-function drawAtkStats() {
-    let font_size = 20;
-    ctxt.fillStyle = '#ffffff';
-    ctxt.textAlign = 'start';
-    ctxt.font = `${font_size}px Courier`;
-    ctxt.fillText(`Damage Taken:\t${damage_taken}`,5, font_size);
-    ctxt.fillText(`Damage Dealt:\t${damage_dealt}`,5, 2*font_size);
-    ctxt.fillText(`Attack Efficiency:\t${getAttackEfficiency()}%`,5, 3*font_size);
-}
-
 function death() {
     dead = true;
     clearInterval(tick_timer);
@@ -2173,19 +2175,53 @@ function victory() {
 function drawEndStats() {
     let w = canvas.width;
     let h = canvas.height;
-    let font_size = 20;
-    ctxt.fillStyle = "#000000bd";
-    ctxt.fillRect(0,0,w,h);
-    ctxt.fillStyle = "#ffffff";
-    ctxt.textAlign = 'center';
-    ctxt.font = `${1.5*font_size}px Courier`;
-    ctxt.fillText(`You have ${dead?'died':'killed Verzik!'}`,w/2,h/5+2*font_size+10);
-    ctxt.textAlign = 'start';
-    ctxt.font = `${font_size}px Courier`;
-    ctxt.fillText(`Damage Taken:\t${damage_taken}`,w/4 + 20,h/5+2*font_size+10+30+font_size);
-    ctxt.fillText(`Damage Dealt:\t${damage_dealt}`,w/4 + 20,h/5+2*font_size+10+30+2*font_size);
-    ctxt.fillText(`Total Attacks Used:\t${attacks_used}`,w/4 + 20,h/5+2*font_size+10+30+3*font_size);
-    ctxt.fillText(`Attack Efficiency:\t${getAttackEfficiency()}%`,w/4 + 20,h/5+2*font_size+10+30+4*font_size);
+    let card_width = Math.min(w * .58, tile_size * 5.2);
+    let card_height = Math.max(tile_size * 1.9, 178 * draw_scale);
+    let card_x = (w - card_width) / 2;
+    let card_y = (h - card_height) / 2;
+    let radius = Math.max(10, 18 * draw_scale);
+    let label_font_size = Math.max(13, Math.round(17 * draw_scale));
+    let value_font_size = Math.max(15, Math.round(21 * draw_scale));
+    let rows = [
+        ["Damage taken", String(damage_taken)],
+        ["Total attacks used", String(attacks_used)],
+        ["Attack efficiency", `${getAttackEfficiency()}%`]
+    ];
+
+    ctxt.save();
+    ctxt.fillStyle = "#000000c7";
+    ctxt.fillRect(0, 0, w, h);
+
+    ctxt.beginPath();
+    roundedRectPath(ctxt, card_x, card_y, card_width, card_height, radius);
+    ctxt.fillStyle = "#171615f2";
+    ctxt.fill();
+    ctxt.lineWidth = Math.max(1, 2 * draw_scale);
+    ctxt.strokeStyle = "#58524b";
+    ctxt.stroke();
+
+    ctxt.fillStyle = "#a73b32";
+    ctxt.fillRect(card_x, card_y, card_width, Math.max(4, 6 * draw_scale));
+
+    let left = card_x + card_width * .12;
+    let right = card_x + card_width * .88;
+    let row_gap = card_height / 4;
+    let first_y = card_y + row_gap * 1.35;
+
+    ctxt.textBaseline = "middle";
+    for (let i = 0; i < rows.length; i++) {
+        let y = first_y + i * row_gap;
+        ctxt.font = `700 ${label_font_size}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+        ctxt.textAlign = "left";
+        ctxt.fillStyle = "#aaa39b";
+        ctxt.fillText(rows[i][0], left, y);
+
+        ctxt.font = `800 ${value_font_size}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+        ctxt.textAlign = "right";
+        ctxt.fillStyle = "#f2efea";
+        ctxt.fillText(rows[i][1], right, y);
+    }
+    ctxt.restore();
 }
 
 function drawImgCentered(context, img, scale = true) {
