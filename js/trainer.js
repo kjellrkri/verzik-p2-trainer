@@ -76,7 +76,8 @@ var values = {
     "color-tile-marker": "#ffffff",
     "color-verzik-marker": "#000000",
     "color-melee-marker": "#ff0000",
-    "color-tile-indicator": "#ffffff" //add "20" to make semi-transparent
+    "color-tile-indicator": "#ff8000",
+    "color-path-tile": "#ff8000"
 };
 
 var ping = 50;
@@ -106,7 +107,7 @@ const true_tile_enabled_storage_key = "verzik-show-true-tile-v1";
 const true_tile_color_storage_key = "verzik-true-tile-color-v1";
 const saved_true_tile_enabled = localStorage.getItem(true_tile_enabled_storage_key);
 var true_tile_enabled = saved_true_tile_enabled === null ? true : saved_true_tile_enabled === "true";
-var true_tile_color = localStorage.getItem(true_tile_color_storage_key) || "#ff0000";
+var true_tile_color = localStorage.getItem(true_tile_color_storage_key) || "#006371";
 
 function loadGeneralPreferences() {
     try {
@@ -127,7 +128,8 @@ function loadGeneralPreferences() {
             "color-tile-marker",
             "color-verzik-marker",
             "color-melee-marker",
-            "color-tile-indicator"
+            "color-tile-indicator",
+            "color-path-tile"
         ]) {
             if (/^#[0-9a-f]{6}$/i.test(saved.values?.[id])) {
                 values[id] = saved.values[id].toLowerCase();
@@ -2085,6 +2087,7 @@ function drawTargetTile() {
                 tile_size, tile_size);
         //draw path tiles
         if(booleans["show-path-tiles"]) {
+            ctxt.fillStyle = values["color-path-tile"] + "20";
             for (let i = 0; i < p1.path_tiles.length; i++) {
                 if (!(i % 2 || i === p1.path_tiles.length - 1)) continue; //skip draw unless i is odd or equal to array length
                 let p = p1.path_tiles[i];
@@ -2281,6 +2284,7 @@ function initFormData() {
     $("show-true-tile").checked = true_tile_enabled;
     $("color-true-tile").value = true_tile_color;
     $("color-tile-indicator").value = values["color-tile-indicator"];
+    $("color-path-tile").value = values["color-path-tile"];
     $("color-verzik-marker").value = values["color-verzik-marker"];
     $("color-melee-marker").value = values["color-melee-marker"];
     $("color-tile-marker").value = values["color-tile-marker"];

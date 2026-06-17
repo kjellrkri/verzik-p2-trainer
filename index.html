@@ -8,7 +8,7 @@
 
         <link rel="icon" href="favicon.ico" type="image/x-icon" />
         <link rel="stylesheet" href="css/normalize.css">
-        <link rel="stylesheet" href="css/main.css?v=20260614-reset-default-settings">
+        <link rel="stylesheet" href="css/main.css?v=20260617-dark-options-ui">
     </head>
     <body onresize="resize()">
         <div class="canvas-wrapper">
@@ -32,98 +32,129 @@
                         </div>
                     </div>
                 </div>
-                <div class="form-box">
-                    <h3>Options:</h3>
-                    <form>
-                        <div class="form-line">
-                            <span><label for="weapon-select">Select weapon</label>
+                <aside class="form-box" aria-label="Trainer options">
+                    <div class="options-header">
+                        <p class="eyebrow">Practice setup</p>
+                        <h3>Options</h3>
+                    </div>
+                    <form class="options-form">
+                        <fieldset class="option-section">
+                            <legend>Combat</legend>
+                            <div class="form-line">
+                                <label for="weapon-select">Weapon</label>
                                 <select id="weapon-select" onchange="updateWeaponSelect(this.id)">
                                     <option value="SCYTHE">scythe</option>
                                     <option value="WHIP">whip</option>
-                                </select></span></div>
-                        <br>
-                        <div class="form-line">
-                            <span><label for="tile-marker-type">Tile marker style</label>
-                                <select id="tile-marker-type" onchange="updateValue(this.id)">
-                                    <option value="none">none</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                </select></span>
-                            <input type="color" id="color-tile-marker" onchange="updateValue(this.id)"></div>
-                        <div class="form-line">
-                            <span><label for="ground-marker-preset">Ground marker preset</label>
+                                </select>
+                            </div>
+                            <label class="toggle-line" for="unlimited-hp-enabled">
+                                <input type="checkbox" id="unlimited-hp-enabled" onchange="updateUnlimitedHp()">
+                                <span>Unlimited player and Verzik HP</span>
+                            </label>
+                            <label class="toggle-line" for="hmt-acid-pools-enabled">
+                                <input type="checkbox" id="hmt-acid-pools-enabled" onchange="updateHmtAcidPools()">
+                                <span>HMT acid pools</span>
+                            </label>
+                        </fieldset>
+
+                        <fieldset class="option-section">
+                            <legend>Ground Markers</legend>
+                            <div class="form-line">
+                                <label for="tile-marker-type">Tile marker style</label>
+                                <div class="inline-control">
+                                    <select id="tile-marker-type" onchange="updateValue(this.id)">
+                                        <option value="none">none</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                    </select>
+                                    <input type="color" id="color-tile-marker" aria-label="Tile marker color" onchange="updateValue(this.id)">
+                                </div>
+                            </div>
+                            <div class="form-line">
+                                <label for="ground-marker-preset">Ground marker preset</label>
                                 <select id="ground-marker-preset" onchange="updateGroundMarkerPreset()">
                                     <option value="none">none</option>
                                     <option value="hmt-boak">HMT BOAK tiles</option>
                                     <option value="reg-tob-boak">reg TOB BOAK tiles</option>
                                     <option value="custom" hidden>Custom / imported</option>
-                                </select></span></div>
-                        <div class="form-line marker-transfer-buttons">
-                            <button type="button" id="import-ground-markers">Import JSON</button>
-                            <button type="button" id="export-ground-markers">Export JSON</button>
-                            <input type="file" id="ground-marker-file-input" accept=".json,application/json" hidden>
-                        </div>
-                        <div class="form-line">
-                            <span><input type="checkbox" id="show-verzik-tiles" onchange="updateBoolean(this.id)">
-                                <label for="show-verzik-tiles">Show Verzik tiles</label></span>
-                            <input type="color" id="color-verzik-marker" onchange="updateValue(this.id)"></div>
-                        <div class="form-line">
-                            <span><input type="checkbox" id="show-melee-tiles" onchange="updateBoolean(this.id)">
-                                <label for="show-melee-tiles">Show melee range tiles</label></span>
-                            <input type="color" id="color-melee-marker" onchange="updateValue(this.id)"></div>
-                        <br>
-                        <div class="form-line">
-                            <span><input type="checkbox" id="show-tile-indicators" onchange="updateBoolean(this.id)" checked >
-                                <label for="show-tile-indicators">Show tile indicators</label></span>
-                            <input type="color" id="color-tile-indicator" onchange="updateValue(this.id)"></div>
-                        <div class="form-line">
-                            <span><input type="checkbox" id="show-path-tiles" onchange="updateBoolean(this.id)" checked >
-                                <label for="show-path-tiles">Show path tiles</label></span></div>
-                        <div class="form-line">
-                            <span><input type="checkbox" id="show-true-tile" onchange="updateTrueTile()">
-                                <label for="show-true-tile">Show true tile</label></span>
-                            <input type="color" id="color-true-tile" value="#ff0000" onchange="updateTrueTile()"></div>
-                        <div class="form-line">
-                            <span><input type="checkbox" id="show-xp-drops" onchange="updateBoolean(this.id)">
-                                <label for="show-xp-drops">Show XP drops</label></span></div>
-                        <div class="form-line">
-                            <span><input type="checkbox" id="weapon-cooldown-metronome" onchange="updateBoolean(this.id)">
-                                <label for="weapon-cooldown-metronome">Weapon cooldown metronome</label></span></div>
-                        <br>
-                        <div class="form-line">
-                            <label for="ping-select">Set ping</label>
-                            <span id="ping-display">50 ms</span>
-                            <input type="range" id="ping-select" value="50" min="10" max="350" onchange="updatePing()"></div>
-                        <div class="form-line">
-                            <label for="volume-select">Volume</label>
-                            <span id="volume-display">50%</span>
-                            <input type="range" id="volume-select" value="50" min="0" max="100" onchange="updateVolume()"></div>
-                        <div class="form-line">
-                            <span><input type="checkbox" id="metronome-enabled" onchange="updateMetronome()">
-                                <label for="metronome-enabled">Audible metronome</label></span></div>
-                        <div class="form-line">
-                            <span><input type="checkbox" id="visual-metronome-enabled" onchange="updateVisualMetronome()">
-                                <label for="visual-metronome-enabled">Visual 4 tick metronome</label></span></div>
-                        <div class="form-line">
-                            <span><label for="visual-danger-tick">Danger tick</label>
+                                </select>
+                            </div>
+                            <div class="form-line marker-transfer-buttons">
+                                <button type="button" id="import-ground-markers">Import JSON</button>
+                                <button type="button" id="export-ground-markers">Export JSON</button>
+                                <input type="file" id="ground-marker-file-input" accept=".json,application/json" hidden>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="option-section">
+                            <legend>Tile Overlays</legend>
+                            <label class="toggle-line color-toggle" for="show-tile-indicators">
+                                <span><input type="checkbox" id="show-tile-indicators" onchange="updateBoolean(this.id)" checked> Show target tile</span>
+                                <input type="color" id="color-tile-indicator" aria-label="Target tile color" onchange="updateValue(this.id)">
+                            </label>
+                            <label class="toggle-line color-toggle" for="show-path-tiles">
+                                <span><input type="checkbox" id="show-path-tiles" onchange="updateBoolean(this.id)" checked> Show path tiles</span>
+                                <input type="color" id="color-path-tile" aria-label="Path tile color" onchange="updateValue(this.id)">
+                            </label>
+                            <label class="toggle-line color-toggle" for="show-true-tile">
+                                <span><input type="checkbox" id="show-true-tile" onchange="updateTrueTile()"> Show true tile</span>
+                                <input type="color" id="color-true-tile" value="#006371" aria-label="True tile color" onchange="updateTrueTile()">
+                            </label>
+                            <label class="toggle-line color-toggle" for="show-verzik-tiles">
+                                <span><input type="checkbox" id="show-verzik-tiles" onchange="updateBoolean(this.id)"> Show Verzik tiles</span>
+                                <input type="color" id="color-verzik-marker" aria-label="Verzik tile color" onchange="updateValue(this.id)">
+                            </label>
+                            <label class="toggle-line color-toggle" for="show-melee-tiles">
+                                <span><input type="checkbox" id="show-melee-tiles" onchange="updateBoolean(this.id)"> Show melee range tiles</span>
+                                <input type="color" id="color-melee-marker" aria-label="Melee range tile color" onchange="updateValue(this.id)">
+                            </label>
+                        </fieldset>
+
+                        <fieldset class="option-section">
+                            <legend>Timing & Audio</legend>
+                            <label class="toggle-line" for="show-xp-drops">
+                                <input type="checkbox" id="show-xp-drops" onchange="updateBoolean(this.id)">
+                                <span>Show XP drops</span>
+                            </label>
+                            <label class="toggle-line" for="weapon-cooldown-metronome">
+                                <input type="checkbox" id="weapon-cooldown-metronome" onchange="updateBoolean(this.id)">
+                                <span>Weapon cooldown metronome</span>
+                            </label>
+                            <label class="toggle-line" for="metronome-enabled">
+                                <input type="checkbox" id="metronome-enabled" onchange="updateMetronome()">
+                                <span>Audible metronome</span>
+                            </label>
+                            <label class="toggle-line" for="visual-metronome-enabled">
+                                <input type="checkbox" id="visual-metronome-enabled" onchange="updateVisualMetronome()">
+                                <span>Visual 4 tick metronome</span>
+                            </label>
+                            <div class="form-line">
+                                <label for="visual-danger-tick">Danger tick</label>
                                 <select id="visual-danger-tick" onchange="updateVisualDangerTick()">
                                     <option value="1">1</option>
                                     <option value="2">2</option>
                                     <option value="3">3</option>
                                     <option value="4">4</option>
-                                </select></span></div>
-                        <div class="form-line">
-                            <span><input type="checkbox" id="unlimited-hp-enabled" onchange="updateUnlimitedHp()">
-                                <label for="unlimited-hp-enabled">Unlimited player and Verzik HP</label></span></div>
-                        <div class="form-line">
-                            <span><input type="checkbox" id="hmt-acid-pools-enabled" onchange="updateHmtAcidPools()">
-                                <label for="hmt-acid-pools-enabled">HMT acid pools</label></span></div>
-                        <div class="form-line reset-settings-row">
+                                </select>
+                            </div>
+                            <div class="form-line range-line">
+                                <label for="ping-select">Ping</label>
+                                <span id="ping-display">50 ms</span>
+                                <input type="range" id="ping-select" value="50" min="10" max="350" onchange="updatePing()">
+                            </div>
+                            <div class="form-line range-line">
+                                <label for="volume-select">Volume</label>
+                                <span id="volume-display">50%</span>
+                                <input type="range" id="volume-select" value="50" min="0" max="100" onchange="updateVolume()">
+                            </div>
+                        </fieldset>
+
+                        <div class="option-section reset-settings-row">
                             <button type="button" id="reset-default-settings">Reset to default settings</button>
                         </div>
                     </form>
-                </div>
+                </aside>
             </div>
             <p align="center">
                 <button id="pause_btn" onclick="pause_play()">Pause</button>
@@ -157,6 +188,6 @@
                 </div>
             </div>
         </div>
-        <script type="text/javascript" src="js/trainer.js?v=20260617-audio-metronome-scheduler"></script>
+        <script type="text/javascript" src="js/trainer.js?v=20260617-dark-options-ui"></script>
     </body>
 </html>
