@@ -253,13 +253,6 @@ input[type="range"] {
     letter-spacing: .01em;
 }
 
-.options-summary {
-    margin: 8px 0 0;
-    color: var(--muted);
-    font-size: 13px;
-    line-height: 1.35;
-}
-
 .eyebrow {
     margin: 0 0 2px;
     color: var(--accent-2);
