@@ -85,6 +85,11 @@ const general_preferences_storage_key = "verzik-general-preferences-v1";
 const metronome_storage_key = "verzik-game-tick-metronome-v1";
 var metronome_enabled = localStorage.getItem(metronome_storage_key) === "true";
 var metronome_audio_context = null;
+var metronome_scheduler_timer = null;
+var metronome_next_tock_time = 0;
+var metronome_scheduled_oscillators = [];
+const metronome_schedule_interval_ms = 80;
+const metronome_schedule_ahead_seconds = .18;
 const visual_metronome_storage_key = "verzik-visual-metronome-v1";
 const saved_visual_metronome = localStorage.getItem(visual_metronome_storage_key);
 var visual_metronome_enabled = saved_visual_metronome === null ? true : saved_visual_metronome === "true";
@@ -234,6 +239,7 @@ var cycles; //count .1 second intervals
 var ticks;  //count ticks
 var paused;
 var tick_timer;
+var last_cycle_timestamp;
 
 var p1;
 var verzik;
@@ -491,25 +497,80 @@ function getMetronomeAudioContext() {
     return metronome_audio_context;
 }
 
-function playMetronomeTock() {
-    if (!metronome_enabled || volume <= 0) return;
+function scheduleMetronomeTock(time) {
     let audio_context = getMetronomeAudioContext();
     if (!audio_context || audio_context.state !== "running") return;
 
-    let now = audio_context.currentTime;
     let oscillator = audio_context.createOscillator();
     let gain = audio_context.createGain();
 
     oscillator.type = "square";
-    oscillator.frequency.setValueAtTime(180, now);
-    oscillator.frequency.exponentialRampToValueAtTime(95, now + .045);
-    gain.gain.setValueAtTime(Math.max(.0001, (volume / 100) * .28), now);
-    gain.gain.exponentialRampToValueAtTime(.0001, now + .06);
+    oscillator.frequency.setValueAtTime(180, time);
+    oscillator.frequency.exponentialRampToValueAtTime(95, time + .045);
+    gain.gain.setValueAtTime(Math.max(.0001, (volume / 100) * .28), time);
+    gain.gain.exponentialRampToValueAtTime(.0001, time + .06);
 
     oscillator.connect(gain);
     gain.connect(audio_context.destination);
-    oscillator.start(now);
-    oscillator.stop(now + .065);
+    oscillator.start(time);
+    oscillator.stop(time + .065);
+    metronome_scheduled_oscillators.push(oscillator);
+    setTimeout(() => {
+        metronome_scheduled_oscillators = metronome_scheduled_oscillators.filter(node => node !== oscillator);
+    }, Math.max(0, (time - audio_context.currentTime + .08) * 1000));
+}
+
+function getSecondsUntilNextGameTick() {
+    let elapsed_since_cycle = Math.max(0, performance.now() - last_cycle_timestamp);
+    let milliseconds_until_next_cycle = Math.max(0, cycle_length - elapsed_since_cycle);
+    let cycles_until_tick = (cycles_per_tick - cycles) % cycles_per_tick;
+    if (cycles_until_tick === 0) cycles_until_tick = cycles_per_tick;
+    return (milliseconds_until_next_cycle + (cycles_until_tick - 1) * cycle_length) / 1000;
+}
+
+function scheduleMetronomeLookahead() {
+    if (!metronome_enabled || paused || !first_click || volume <= 0) return;
+    let audio_context = getMetronomeAudioContext();
+    if (!audio_context || audio_context.state !== "running") return;
+
+    let now = audio_context.currentTime;
+    if (!metronome_next_tock_time) metronome_next_tock_time = now + .03;
+    while (metronome_next_tock_time < now + metronome_schedule_ahead_seconds) {
+        scheduleMetronomeTock(metronome_next_tock_time);
+        metronome_next_tock_time += tick_length / 1000;
+    }
+}
+
+function startMetronomeScheduler(first_tock_delay_seconds = .03) {
+    if (!metronome_enabled || metronome_scheduler_timer) return;
+    let audio_context = getMetronomeAudioContext();
+    if (!audio_context) return;
+    if (audio_context.state === "suspended") audio_context.resume();
+    metronome_next_tock_time = audio_context.currentTime + Math.max(.03, first_tock_delay_seconds);
+    scheduleMetronomeLookahead();
+    metronome_scheduler_timer = setInterval(scheduleMetronomeLookahead, metronome_schedule_interval_ms);
+}
+
+function stopMetronomeScheduler() {
+    clearInterval(metronome_scheduler_timer);
+    metronome_scheduler_timer = null;
+    metronome_next_tock_time = 0;
+    for (let oscillator of metronome_scheduled_oscillators) {
+        try {
+            oscillator.stop();
+        } catch (error) {
+            // The node may already have stopped naturally.
+        }
+    }
+    metronome_scheduled_oscillators = [];
+}
+
+function syncMetronomeScheduler(first_tock_delay_seconds = getSecondsUntilNextGameTick()) {
+    if (metronome_enabled && !paused && first_click) {
+        startMetronomeScheduler(first_tock_delay_seconds);
+    } else {
+        stopMetronomeScheduler();
+    }
 }
 
 function playWebSwooshSound() {
@@ -1542,7 +1603,10 @@ canvas.addEventListener('mousedown', function (event) {
     if (numAssetsToLoad > 0) return;
     let audio_context = getMetronomeAudioContext();
     if (audio_context && audio_context.state === "suspended") audio_context.resume();
-    if (!first_click) first_click = true;
+    if (!first_click) {
+        first_click = true;
+        syncMetronomeScheduler();
+    }
 
     let click_target = getClickTarget(event);
     click_x.click(click_target, event);
@@ -1796,6 +1860,7 @@ function pause_play() {
     if (paused) {
         if (verzik.attack_audio) verzik.attack_audio.pause();
     }
+    syncMetronomeScheduler();
 }
 
 function tickPlayers() {
@@ -1810,9 +1875,11 @@ function gameCycles() {
     if (numAssetsToLoad > 0) {console.log("loading...");return;}
     
     if (paused) return;
+    last_cycle_timestamp = performance.now();
     cycles = (cycles + 1) % cycles_per_tick;
     //game tick every .6 sec, but only after some initial interaction
     if(!cycles && first_click) {
+        syncMetronomeScheduler();
         gameTick();
     }
     animatePlayers();
@@ -1821,7 +1888,6 @@ function gameCycles() {
 }
 
 function gameTick() {
-    playMetronomeTock();
     ticks += 1;
     console.log(`tick ${ticks}`);
     tickPoisonPools();
@@ -2060,6 +2126,7 @@ function death() {
     dead = true;
     clearInterval(tick_timer);
     tick_timer = null;
+    stopMetronomeScheduler();
     setTimeout(() => {
         drawTileBoard();
         drawPlayers();
@@ -2072,6 +2139,7 @@ function victory() {
     victorious = true;
     clearInterval(tick_timer);
     tick_timer = null;
+    stopMetronomeScheduler();
     setTimeout(() => {
         drawTileBoard();
         drawPlayers();
@@ -2140,6 +2208,10 @@ function updateVolume() {
     
     $("volume-display").innerHTML = volume + "%";
     saveGeneralPreferences();
+    if (metronome_scheduler_timer) {
+        stopMetronomeScheduler();
+        startMetronomeScheduler(getSecondsUntilNextGameTick());
+    }
 }
 
 function updateMetronome() {
@@ -2149,6 +2221,7 @@ function updateMetronome() {
         let audio_context = getMetronomeAudioContext();
         if (audio_context && audio_context.state === "suspended") audio_context.resume();
     }
+    syncMetronomeScheduler();
 }
 
 function updateVisualMetronome() {
@@ -2218,6 +2291,7 @@ function initFormData() {
 }
 
 function reset() {
+    stopMetronomeScheduler();
     first_click = false;
     first_attack = false;
     
@@ -2242,6 +2316,7 @@ function reset() {
     
     cycles = 0;
     ticks = 0;
+    last_cycle_timestamp = performance.now();
     paused = false;
     
     clearInterval(tick_timer);
