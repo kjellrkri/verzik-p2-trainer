@@ -132,11 +132,28 @@ input[type="range"] {
     min-height: 100vh;
     max-width: 100%;
     margin: 0 auto;
-    padding: 14px;
+    padding: 10px 14px 14px;
     background:
         radial-gradient(circle at top left, #3b3835 0, transparent 31rem),
         radial-gradient(circle at bottom left, #3d2522 0, transparent 30rem),
         linear-gradient(135deg, #080807 0%, #050505 100%);
+}
+
+.site-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 58px;
+    margin: 0 auto 8px;
+}
+
+.site-logo {
+    display: block;
+    width: min(760px, 54vw);
+    max-width: calc(100vw - 32px);
+    max-height: clamp(52px, 8vh, 88px);
+    object-fit: contain;
+    filter: drop-shadow(0 8px 18px #000c);
 }
 
 .flex-container {
@@ -148,6 +165,7 @@ input[type="range"] {
 }
 
 .game-area {
+    order: 2;
     overflow: hidden;
     border: 1px solid var(--border);
     border-radius: 14px;
@@ -163,14 +181,47 @@ input[type="range"] {
     display: flex;
     justify-content: center;
     gap: 8px;
-    padding: 10px;
+    padding: 8px 10px;
     border-top: 1px solid var(--border);
     background: #0b0a09;
 }
 
+.example-clips {
+    order: 1;
+    width: 270px;
+    max-height: calc(100vh - 116px);
+    overflow: auto;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: linear-gradient(180deg, #1b1917, #121110);
+    box-shadow: var(--shadow);
+}
+
+.example-clips h3 {
+    margin: 0 0 10px;
+    color: var(--text);
+    font-size: 18px;
+}
+
+.clip-list {
+    display: grid;
+    gap: 10px;
+}
+
+.clip-list iframe {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 1px solid var(--border-bright);
+    border-radius: 10px;
+    background: #000;
+}
+
 .form-box {
+    order: 3;
     width: min(390px, calc(100vw - 28px));
-    max-height: calc(100vh - 28px);
+    max-height: calc(100vh - 116px);
     overflow: auto;
     padding: 14px;
     border: 1px solid var(--border);
@@ -460,13 +511,40 @@ input[type="range"] {
     gap: 8px;
 }
 
+@media (max-width: 1700px) {
+    .example-clips {
+        order: 4;
+        width: min(100%, 760px);
+        max-height: none;
+    }
+
+    .clip-list {
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+}
+
 @media (max-width: 900px) {
     .canvas-wrapper {
         padding: 8px;
     }
 
+    .site-logo {
+        width: min(620px, 88vw);
+        max-height: 64px;
+    }
+
     .form-box {
         width: min(100%, 720px);
         max-height: none;
+    }
+
+    .example-clips {
+        width: min(100%, 720px);
+    }
+}
+
+@media (max-width: 560px) {
+    .clip-list {
+        grid-template-columns: 1fr;
     }
 }

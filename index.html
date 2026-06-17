@@ -20,7 +20,7 @@
 
         <link rel="icon" href="favicon.ico" type="image/x-icon" />
         <link rel="stylesheet" href="css/normalize.css">
-        <link rel="stylesheet" href="css/main.css?v=20260617-audio-seo">
+        <link rel="stylesheet" href="css/main.css?v=20260617-logo-clips">
         <script type="application/ld+json">
         {
             "@context": "https://schema.org",
@@ -37,11 +37,22 @@
     </head>
     <body onresize="resize()">
         <div class="canvas-wrapper">
+            <header class="site-header" aria-label="Site logo">
+                <img src="img/boak-trainer-logo.png" alt="BOAK Trainer" class="site-logo">
+            </header>
             <div class="flex-container">
+                <aside class="example-clips" aria-label="Example clips">
+                    <h3>Example clips</h3>
+                    <div class="clip-list">
+                        <iframe src="https://www.youtube.com/embed/i93SAoNdScs" title="Example clip 1" loading="lazy" allowfullscreen></iframe>
+                        <iframe src="https://www.youtube.com/embed/cvALnpmdLj4" title="Example clip 2" loading="lazy" allowfullscreen></iframe>
+                        <iframe src="https://www.youtube.com/embed/2mAeiOdu0XA" title="Example clip 3" loading="lazy" allowfullscreen></iframe>
+                        <iframe src="https://www.youtube.com/embed/v3Z50WckK6A" title="Example clip 4" loading="lazy" allowfullscreen></iframe>
+                    </div>
+                </aside>
                 <div class="game-area">
                     <canvas id="tile-board" tabindex="1"></canvas>
                     <div class="game-controls" aria-label="Game controls">
-                        <button id="pause_btn" onclick="pause_play()">Pause</button>
                         <button id="reset_btn" onclick="reset()">Reset Verzik</button>
                     </div>
                     <div id="tile-context-menu" class="tile-context-menu" role="menu">
@@ -218,6 +229,6 @@
                 </div>
             </div>
         </div>
-        <script type="text/javascript" src="js/trainer.js?v=20260617-smooth-runtime"></script>
+        <script type="text/javascript" src="js/trainer.js?v=20260617-logo-clips"></script>
     </body>
 </html>

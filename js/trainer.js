@@ -1569,7 +1569,12 @@ function getAngleDifference(startAngle, targetAngle) {
  */
 function resize() {
     let viewport_width = .96 * window.innerWidth;
-    let viewport_height = .9 * window.innerHeight;
+    let canvas_top = canvas.getBoundingClientRect().top || 0;
+    let controls = document.querySelector(".game-controls");
+    let controls_height = controls ? controls.offsetHeight : 0;
+    let viewport_height = Math.max(
+            tile_size_max * 3,
+            window.innerHeight - canvas_top - controls_height - 14);
 
     draw_scale = Math.min(
             Math.min(1, viewport_width / (tile_size_max * board_width)),
@@ -1837,11 +1842,7 @@ document.addEventListener("keydown", function (event) {
 
 canvas.addEventListener('keydown', function (event) {
     if (numAssetsToLoad > 0) return;
-    if (event.keyCode===32||event.keyCode===80) { // if space-bar or "P" are down
-        pause_play();
-        event.preventDefault();
-    }
-
+    event.stopPropagation();
 });
 
 canvas.addEventListener('keypress', function (event) {
@@ -1866,12 +1867,6 @@ function generate_path(from, to) {
     }
     path_tiles.push(to);
     return path_tiles;
-}
-
-function pause_play() {
-    paused = !paused;
-    $("pause_btn").innerHTML = paused ? "Play" : "Pause";
-    syncMetronomeScheduler();
 }
 
 function tickPlayers() {
@@ -2262,7 +2257,7 @@ function drawEndStats() {
     let w = canvas.width;
     let h = canvas.height;
     let card_width = Math.min(w * .58, tile_size * 5.2);
-    let card_height = Math.max(tile_size * 1.9, 178 * draw_scale);
+    let card_height = Math.max(tile_size * 1.45, 136 * draw_scale);
     let card_x = (w - card_width) / 2;
     let card_y = (h - card_height) / 2;
     let radius = Math.max(10, 18 * draw_scale);
@@ -2270,7 +2265,6 @@ function drawEndStats() {
     let value_font_size = Math.max(15, Math.round(21 * draw_scale));
     let rows = [
         ["Damage taken", String(damage_taken)],
-        ["Total attacks used", String(attacks_used)],
         ["Attack efficiency", `${getAttackEfficiency()}%`]
     ];
 
@@ -2291,8 +2285,8 @@ function drawEndStats() {
 
     let left = card_x + card_width * .12;
     let right = card_x + card_width * .88;
-    let row_gap = card_height / 4;
-    let first_y = card_y + row_gap * 1.35;
+    let row_gap = card_height / 3;
+    let first_y = card_y + row_gap * 1.25;
 
     ctxt.textBaseline = "middle";
     for (let i = 0; i < rows.length; i++) {
@@ -2554,7 +2548,14 @@ function preloadAudio(obj_src, obj_sound, prefix, ext) {
     }
 }
 
-window.onload = function () {
+function bootTrainer() {
     init();
     resize();
-};
+    window.addEventListener("load", resize, {once: true});
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootTrainer, {once: true});
+} else {
+    bootTrainer();
+}
