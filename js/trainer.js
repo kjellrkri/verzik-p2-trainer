@@ -61,6 +61,10 @@ const weapons = {
     "SCYTHE": scythe,
     "WHIP": whip
 };
+const spawn_locations = {
+    left: {x: 3, y: 5},
+    right: {x: 11, y: 5}
+};
 
 var booleans = {
     "show-verzik-tiles": true,
@@ -73,6 +77,7 @@ var booleans = {
 
 var values = {
     "weapon-select": "SCYTHE",
+    "spawn-location": "left",
     "tile-marker-type": "3",
     "color-tile-marker": "#ffffff",
     "color-verzik-marker": "#000000",
@@ -124,6 +129,9 @@ function loadGeneralPreferences() {
 
         if (["SCYTHE", "WHIP"].includes(saved.values?.["weapon-select"])) {
             values["weapon-select"] = saved.values["weapon-select"];
+        }
+        if (Object.keys(spawn_locations).includes(saved.values?.["spawn-location"])) {
+            values["spawn-location"] = saved.values["spawn-location"];
         }
         if (["none", "1", "2", "3"].includes(saved.values?.["tile-marker-type"])) {
             values["tile-marker-type"] = saved.values["tile-marker-type"];
@@ -2342,6 +2350,12 @@ function updateWeaponSelect(id) {
     if (paused) draw();
 }
 
+function updateSpawnLocation() {
+    values["spawn-location"] = $("spawn-location").value;
+    saveGeneralPreferences();
+    reset();
+}
+
 function updatePing() {
     ping = $("ping-select").value;
     $("ping-display").innerHTML = ping + " ms";
@@ -2410,6 +2424,7 @@ function updateTrueTile() {
 
 function initFormData() {
     $("weapon-select").value = values["weapon-select"];
+    $("spawn-location").value = values["spawn-location"];
     $("tile-marker-type").value = values["tile-marker-type"];
     $("ground-marker-preset").value = ground_marker_preset;
     $("show-verzik-tiles").checked = booleans["show-verzik-tiles"];
@@ -2453,7 +2468,8 @@ function reset() {
     dead = false;
     victorious = false;
 
-    p1 = new Player({x:3, y:5});
+    let spawn_location = spawn_locations[values["spawn-location"]] || spawn_locations.left;
+    p1 = new Player(spawn_location);
     verzik = new NPC({x:6, y:4}, 3);
     verzik.target(p1);
     poison_pools = [];
