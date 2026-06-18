@@ -6,7 +6,15 @@ const sounds_ext = ".m4a";
 
 var numAssetsToLoad = 0;
 var imgs = {};
-const nylocas_animation_frames = ["0","1","2","3","4","5","6","7","8","9","10","11"];
+const makeAnimationFrames = count => Array.from({length: count}, (_, i) => String(i));
+const nylocas_animation_frames = makeAnimationFrames(12);
+const nylocas_death_animation_frames = {
+    hagios: makeAnimationFrames(26),
+    ischyros: makeAnimationFrames(42),
+    toxobolos: makeAnimationFrames(26)
+};
+const nylocas_death_duration_cycles = Math.max(
+        ...Object.values(nylocas_death_animation_frames).map(frames => frames.length));
 const img_ = {
     tile_board: "",
     acid_splat: "",
@@ -16,6 +24,7 @@ const img_ = {
         ischyros: nylocas_animation_frames,
         toxobolos: nylocas_animation_frames
     },
+    nylocas_death: nylocas_death_animation_frames,
     whip: {idle: "", attack: ["0","1","2","3","4","5","6","7","8","9"]},
     scythe: {idle: "", attack: ["0","1","2","3","4","5","6","7","8","9"]},
     birds: ["0","1","2","3","4","5"],
@@ -270,6 +279,7 @@ var marker_json_mode = "export";
 var click_x;
 var poison_pools;
 var nylocas_special_ticks_remaining;
+var nylocas_special_death_start_tick;
 
 var first_click;
 var first_attack;
@@ -1252,6 +1262,7 @@ class NPC {
         this.crab_special_eligible = false;
         this.blue_specials_since_crab = 0;
         nylocas_special_ticks_remaining = nylocas_special_duration_ticks;
+        nylocas_special_death_start_tick = null;
         this.range_att = false;
         this.range_bomb = null;
         this.animation_frames = [...imgs.verzik.attack];
@@ -1540,7 +1551,13 @@ function drawPoisonPools() {
 }
 
 function tickNylocasSpecial() {
-    if (nylocas_special_ticks_remaining > 0) nylocas_special_ticks_remaining -= 1;
+    if (nylocas_special_ticks_remaining > 0) {
+        nylocas_special_ticks_remaining -= 1;
+        if (nylocas_special_ticks_remaining === 0) nylocas_special_death_start_tick = ticks;
+    } else if (nylocas_special_death_start_tick !== null) {
+        let elapsed_cycles = (ticks - nylocas_special_death_start_tick) * cycles_per_tick;
+        if (elapsed_cycles >= nylocas_death_duration_cycles) nylocas_special_death_start_tick = null;
+    }
 }
 
 function getNylocasSpecialAngle(spawn) {
@@ -1549,15 +1566,36 @@ function getNylocasSpecialAngle(spawn) {
     return Math.atan2(center_y - spawn.y, center_x - spawn.x) - Math.PI / 2;
 }
 
-function drawNylocasSpecial() {
-    if (nylocas_special_ticks_remaining <= 0 || !imgs.nylocas) return;
+function getNylocasSpecialAnimationState() {
+    if (nylocas_special_ticks_remaining > 0) {
+        return {
+            frames_by_key: imgs.nylocas,
+            elapsed_cycles: (nylocas_special_duration_ticks - nylocas_special_ticks_remaining) * cycles_per_tick + cycles,
+            loop: true
+        };
+    }
+    if (nylocas_special_death_start_tick !== null) {
+        let elapsed_cycles = (ticks - nylocas_special_death_start_tick) * cycles_per_tick + cycles;
+        if (elapsed_cycles >= nylocas_death_duration_cycles) return null;
+        return {
+            frames_by_key: imgs.nylocas_death,
+            elapsed_cycles,
+            loop: false
+        };
+    }
+    return null;
+}
 
-    let elapsed_cycles = (nylocas_special_duration_ticks - nylocas_special_ticks_remaining) * cycles_per_tick + cycles;
+function drawNylocasSpecial() {
+    let state = getNylocasSpecialAnimationState();
+    if (!state || !state.frames_by_key) return;
+
     for (let spawn of nylocas_special_spawns) {
-        let frames = imgs.nylocas[spawn.key];
+        let frames = state.frames_by_key[spawn.key];
         if (!frames || !frames.length) continue;
 
-        let frame_index = elapsed_cycles % frames.length;
+        if (!state.loop && state.elapsed_cycles >= frames.length) continue;
+        let frame_index = state.loop ? state.elapsed_cycles % frames.length : state.elapsed_cycles;
         let frame = frames[frame_index];
         if (!frame) continue;
 
@@ -2521,6 +2559,7 @@ function reset() {
     verzik.target(p1);
     poison_pools = [];
     nylocas_special_ticks_remaining = 0;
+    nylocas_special_death_start_tick = null;
 
     recent_click = null;
     
