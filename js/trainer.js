@@ -6,11 +6,16 @@ const sounds_ext = ".m4a";
 
 var numAssetsToLoad = 0;
 var imgs = {};
+const nylocas_animation_frames = ["0","1","2","3","4","5","6","7","8","9","10","11"];
 const img_ = {
     tile_board: "",
-    crab: "",
     acid_splat: "",
     magic_projectile: ["0","1","2","3","4","5","6","7","8","9","10"],
+    nylocas: {
+        hagios: nylocas_animation_frames,
+        ischyros: nylocas_animation_frames,
+        toxobolos: nylocas_animation_frames
+    },
     whip: {idle: "", attack: ["0","1","2","3","4","5","6","7","8","9"]},
     scythe: {idle: "", attack: ["0","1","2","3","4","5","6","7","8","9"]},
     birds: ["0","1","2","3","4","5"],
@@ -36,8 +41,14 @@ const sounds_ = {
 const cycle_length = 100; // .1 seconds per animation cycle, 10 fps
 const cycles_per_tick = 6;
 const tick_length = cycle_length * cycles_per_tick;
+const nylocas_special_duration_ticks = 12;
 const board_width = 15;  // # game tiles wide
 const board_height = 11; // # game tiles high
+const nylocas_special_spawns = [
+    {key: "hagios", x: board_width / 2, y: .5, size: 1.65},
+    {key: "ischyros", x: .5, y: board_height / 2, size: 1.65},
+    {key: "toxobolos", x: board_width - .5, y: board_height / 2, size: 1.65}
+];
 
 const tile_marker_json = '{"none":[],"1":[[7,2],[4,5],[10,5],[7,8]],"2":[[6,2],[8,2],[4,4],[4,6],[10,4],[10,6],[6,8],[8,8]],"3":[[5,2],[6,2],[7,2],[8,2],[9,2],[4,3],[4,4],[4,5],[4,6],[4,7],[10,3],[10,4],[10,5],[10,6],[10,7],[5,8],[6,8],[7,8],[8,8],[9,8]]}';
 const tile_marker_arr = JSON.parse(tile_marker_json);
@@ -258,7 +269,7 @@ var marker_json_mode = "export";
 
 var click_x;
 var poison_pools;
-var crab_icon_ticks_remaining;
+var nylocas_special_ticks_remaining;
 
 var first_click;
 var first_attack;
@@ -1240,7 +1251,7 @@ class NPC {
         // Crab replaces this attack without changing the four-auto magic count.
         this.crab_special_eligible = false;
         this.blue_specials_since_crab = 0;
-        crab_icon_ticks_remaining = 12;
+        nylocas_special_ticks_remaining = nylocas_special_duration_ticks;
         this.range_att = false;
         this.range_bomb = null;
         this.animation_frames = [...imgs.verzik.attack];
@@ -1528,25 +1539,40 @@ function drawPoisonPools() {
     for (let pool of poison_pools) pool.draw(ctxt);
 }
 
-function tickCrabIcon() {
-    if (crab_icon_ticks_remaining > 0) crab_icon_ticks_remaining -= 1;
+function tickNylocasSpecial() {
+    if (nylocas_special_ticks_remaining > 0) nylocas_special_ticks_remaining -= 1;
 }
 
-function drawCrabIcon() {
-    if (crab_icon_ticks_remaining <= 0 || !imgs.crab) return;
+function getNylocasSpecialAngle(spawn) {
+    let center_x = board_width / 2;
+    let center_y = board_height / 2;
+    return Math.atan2(center_y - spawn.y, center_x - spawn.x) - Math.PI / 2;
+}
 
-    let old_size = Math.max(48, Math.min(82, tile_size * .72));
-    let size = Math.min(old_size * 3, canvas.width - 28, canvas.height - 28);
-    let aspect_ratio = imgs.crab.width / imgs.crab.height;
-    let draw_width = aspect_ratio >= 1 ? size : size * aspect_ratio;
-    let draw_height = aspect_ratio >= 1 ? size / aspect_ratio : size;
-    let x = canvas.width - draw_width - 14;
-    let y = 14;
-    let sprite = getScaledSprite("crab", imgs.crab, draw_width, draw_height);
+function drawNylocasSpecial() {
+    if (nylocas_special_ticks_remaining <= 0 || !imgs.nylocas) return;
 
-    ctxt.save();
-    ctxt.drawImage(sprite, x, y, draw_width, draw_height);
-    ctxt.restore();
+    let elapsed_cycles = (nylocas_special_duration_ticks - nylocas_special_ticks_remaining) * cycles_per_tick + cycles;
+    for (let spawn of nylocas_special_spawns) {
+        let frames = imgs.nylocas[spawn.key];
+        if (!frames || !frames.length) continue;
+
+        let frame_index = elapsed_cycles % frames.length;
+        let frame = frames[frame_index];
+        if (!frame) continue;
+
+        let size = tile_size * spawn.size;
+        let aspect_ratio = frame.width / frame.height;
+        let draw_width = aspect_ratio >= 1 ? size : size * aspect_ratio;
+        let draw_height = aspect_ratio >= 1 ? size / aspect_ratio : size;
+        let scaled_sprite = getScaledSprite(`nylocas_${spawn.key}_${frame_index}`, frame, draw_width, draw_height);
+
+        ctxt.save();
+        ctxt.translate(spawn.x * tile_size, spawn.y * tile_size);
+        ctxt.rotate(getNylocasSpecialAngle(spawn));
+        ctxt.drawImage(scaled_sprite, -draw_width / 2, -draw_height / 2, draw_width, draw_height);
+        ctxt.restore();
+    }
 }
 
 function getVisualMetronomePhase() {
@@ -1956,7 +1982,7 @@ function runGameCycle(cycle_timestamp) {
 function gameTick() {
     ticks += 1;
     tickPoisonPools();
-    tickCrabIcon();
+    tickNylocasSpecial();
     tickPlayers();
     damagePlayerInPoisonPool();
     tickNPCs();
@@ -1984,7 +2010,7 @@ function draw() {
     drawMagicProjectile();
     drawVisualMetronome();
     drawClickX();
-    drawCrabIcon();
+    drawNylocasSpecial();
     if (dead || victorious) {
         drawEndStats();
     }
@@ -2494,7 +2520,7 @@ function reset() {
     verzik = new NPC({x:6, y:4}, 3);
     verzik.target(p1);
     poison_pools = [];
-    crab_icon_ticks_remaining = 0;
+    nylocas_special_ticks_remaining = 0;
 
     recent_click = null;
     
