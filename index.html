@@ -137,6 +137,10 @@
                                 </div>
                             </div>
                             <div class="form-line">
+                                <label for="color-marker-draw">Marker draw color</label>
+                                <input type="color" id="color-marker-draw" aria-label="Marker draw color" onchange="updateValue(this.id)">
+                            </div>
+                            <div class="form-line">
                                 <label for="ground-marker-preset">Ground marker preset</label>
                                 <select id="ground-marker-preset" onchange="updateGroundMarkerPreset()">
                                     <option value="none">none</option>
@@ -249,6 +253,6 @@
                 </div>
             </div>
         </div>
-        <script type="text/javascript" src="js/trainer.js?v=20260618-corner-spawns"></script>
+        <script type="text/javascript" src="js/trainer.js?v=20260618-marker-draw-color"></script>
     </body>
 </html>

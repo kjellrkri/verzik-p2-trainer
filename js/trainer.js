@@ -96,7 +96,8 @@ var values = {
     "color-verzik-marker": "#000000",
     "color-melee-marker": "#ff0000",
     "color-tile-indicator": "#ff8000",
-    "color-path-tile": "#ff8000"
+    "color-path-tile": "#ff8000",
+    "color-marker-draw": "#ffff00"
 };
 
 var ping = 50;
@@ -158,7 +159,8 @@ function loadGeneralPreferences() {
             "color-verzik-marker",
             "color-melee-marker",
             "color-tile-indicator",
-            "color-path-tile"
+            "color-path-tile",
+            "color-marker-draw"
         ]) {
             if (/^#[0-9a-f]{6}$/i.test(saved.values?.[id])) {
                 values[id] = saved.values[id].toLowerCase();
@@ -1729,7 +1731,7 @@ function refreshAfterMarkerChange() {
 $("add-tile-marker").addEventListener("click", function () {
     if (!context_menu_tile) return;
     custom_tile_markers[getCustomTileMarkerKey(context_menu_tile.x, context_menu_tile.y)] = {
-        color: default_custom_tile_marker_color,
+        color: values["color-marker-draw"] || default_custom_tile_marker_color,
         label: ""
     };
     refreshAfterMarkerChange();
@@ -2463,6 +2465,7 @@ function initFormData() {
     $("color-verzik-marker").value = values["color-verzik-marker"];
     $("color-melee-marker").value = values["color-melee-marker"];
     $("color-tile-marker").value = values["color-tile-marker"];
+    $("color-marker-draw").value = values["color-marker-draw"];
     $("ping-select").value = String(ping);
     $("ping-display").innerHTML = ping + " ms";
     $("volume-select").value = String(volume);
