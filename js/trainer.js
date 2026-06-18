@@ -52,6 +52,8 @@ const sounds_ = {
 const cycle_length = 100; // .1 seconds per animation cycle, 10 fps
 const cycles_per_tick = 6;
 const tick_length = cycle_length * cycles_per_tick;
+const initial_verzik_attack_cycle = 2;
+const visual_metronome_danger_phase = 2;
 const poison_pool_duration_ticks = 12;
 const nylocas_special_duration_ticks = 12;
 const board_width = 15;  // # game tiles wide
@@ -138,9 +140,9 @@ const metronome_cleanup_padding_seconds = .2;
 const visual_metronome_storage_key = "verzik-visual-metronome-v1";
 const saved_visual_metronome = localStorage.getItem(visual_metronome_storage_key);
 var visual_metronome_enabled = saved_visual_metronome === null ? true : saved_visual_metronome === "true";
-const visual_danger_tick_storage_key = "verzik-visual-danger-tick-v1";
+const visual_danger_tick_storage_key = "verzik-visual-danger-tick-v2";
 const saved_visual_danger_tick = Number(localStorage.getItem(visual_danger_tick_storage_key));
-var visual_danger_tick = [1, 2, 3, 4].includes(saved_visual_danger_tick) ? saved_visual_danger_tick : 3;
+var visual_danger_tick = [1, 2, 3, 4].includes(saved_visual_danger_tick) ? saved_visual_danger_tick : 2;
 const unlimited_hp_storage_key = "verzik-unlimited-hp-v2";
 const unlimited_player_hp_storage_key = "verzik-unlimited-player-hp-v1";
 const unlimited_verzik_hp_storage_key = "verzik-unlimited-verzik-hp-v1";
@@ -1631,7 +1633,7 @@ function getVisualMetronomePhase() {
 
 function getVisualMetronomeTick() {
     let phase = getVisualMetronomePhase();
-    return ((phase + visual_danger_tick) % 4) + 1;
+    return ((phase - visual_metronome_danger_phase + visual_danger_tick + 3) % 4) + 1;
 }
 
 function drawVisualMetronome() {
@@ -1640,7 +1642,7 @@ function drawVisualMetronome() {
     let tick = getVisualMetronomeTick();
     let center = verzik.getCenterPixel();
     let radius = Math.max(22, tile_size * .36);
-    let color = getVisualMetronomePhase() === 3 ? "#e32222" : "#18a83a";
+    let color = getVisualMetronomePhase() === visual_metronome_danger_phase ? "#e32222" : "#18a83a";
 
     ctxt.save();
     ctxt.fillStyle = color;
@@ -2569,6 +2571,7 @@ function reset() {
     p1.anim_angle = spawn_location.angle;
     verzik = new NPC({x:6, y:4}, 3);
     verzik.target(p1);
+    verzik.attack_cycle = initial_verzik_attack_cycle;
     poison_pools = [];
     nylocas_special_ticks_remaining = 0;
     nylocas_special_death_start_tick = null;
