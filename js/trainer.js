@@ -15,7 +15,7 @@ const nylocas_death_animation_frames = {
 };
 const nylocas_death_duration_cycles = Math.max(
         ...Object.values(nylocas_death_animation_frames).map(frames => frames.length));
-const nylocas_death_sound_cycle = Math.floor(nylocas_death_duration_cycles / 2);
+const nylocas_death_sound_cycle = Math.floor(nylocas_death_duration_cycles / 4);
 const img_ = {
     tile_board: "",
     acid_splat: "",
