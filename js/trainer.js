@@ -134,6 +134,7 @@ const metronome_storage_key = "verzik-game-tick-metronome-v1";
 var metronome_enabled = localStorage.getItem(metronome_storage_key) === "true";
 var metronome_audio_context = null;
 var audio_unlocked = false;
+var audio_unlock_pending = false;
 var metronome_scheduler_timer = null;
 var metronome_next_tock_time = 0;
 var metronome_scheduled_oscillators = [];
@@ -572,31 +573,24 @@ function getMetronomeAudioContext() {
 function resumeAudioContext() {
     let audio_context = getMetronomeAudioContext();
     if (audio_context && audio_context.state === "suspended") {
+        audio_unlock_pending = true;
         audio_context.resume()
             .then(() => {
                 audio_unlocked = audio_context.state === "running";
+                audio_unlock_pending = false;
             })
-            .catch(() => {});
+            .catch(() => {
+                audio_unlock_pending = false;
+            });
     } else if (audio_context && audio_context.state === "running") {
         audio_unlocked = true;
+        audio_unlock_pending = false;
     }
     return audio_context;
 }
 
 function unlockAudioContext() {
-    let audio_context = resumeAudioContext();
-    if (!audio_context || audio_unlocked) return audio_context;
-
-    try {
-        let source = audio_context.createBufferSource();
-        source.buffer = audio_context.createBuffer(1, 1, audio_context.sampleRate);
-        source.connect(audio_context.destination);
-        source.start(0);
-        audio_unlocked = audio_context.state === "running";
-    } catch (error) {
-        audio_unlocked = false;
-    }
-    return audio_context;
+    return resumeAudioContext();
 }
 
 function initializeAudioUnlockHandlers() {
