@@ -45,9 +45,9 @@ const nylocas_special_duration_ticks = 12;
 const board_width = 15;  // # game tiles wide
 const board_height = 11; // # game tiles high
 const nylocas_special_spawns = [
-    {key: "hagios", x: board_width / 2, y: 2, size: 4},
-    {key: "ischyros", x: 2, y: board_height / 2, size: 4},
-    {key: "toxobolos", x: board_width - 2, y: board_height / 2, size: 4}
+    {key: "hagios", x: board_width / 2, y: 1, size: 2},
+    {key: "ischyros", x: 1, y: board_height / 2, size: 2},
+    {key: "toxobolos", x: board_width - 1, y: board_height / 2, size: 2}
 ];
 
 const tile_marker_json = '{"none":[],"1":[[7,2],[4,5],[10,5],[7,8]],"2":[[6,2],[8,2],[4,4],[4,6],[10,4],[10,6],[6,8],[8,8]],"3":[[5,2],[6,2],[7,2],[8,2],[9,2],[4,3],[4,4],[4,5],[4,6],[4,7],[10,3],[10,4],[10,5],[10,6],[10,7],[5,8],[6,8],[7,8],[8,8],[9,8]]}';
