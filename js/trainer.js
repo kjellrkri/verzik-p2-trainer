@@ -38,6 +38,8 @@ const img_ = {
 };
 var sounds = {};
 var audio_buffers = {};
+var audio_sources = {};
+var fallback_audio_nodes = [];
 const sounds_ = {
     scythe: "",
     whip: "",
@@ -131,6 +133,7 @@ const general_preferences_storage_key = "verzik-general-preferences-v1";
 const metronome_storage_key = "verzik-game-tick-metronome-v1";
 var metronome_enabled = localStorage.getItem(metronome_storage_key) === "true";
 var metronome_audio_context = null;
+var audio_unlocked = false;
 var metronome_scheduler_timer = null;
 var metronome_next_tock_time = 0;
 var metronome_scheduled_oscillators = [];
@@ -566,12 +569,72 @@ function getMetronomeAudioContext() {
     return metronome_audio_context;
 }
 
-function playSound(name, volume_divisor = 300) {
+function resumeAudioContext() {
     let audio_context = getMetronomeAudioContext();
-    let buffer = audio_buffers[name];
-    if (!audio_context || !buffer || volume <= 0) return null;
+    if (audio_context && audio_context.state === "suspended") {
+        audio_context.resume()
+            .then(() => {
+                audio_unlocked = audio_context.state === "running";
+            })
+            .catch(() => {});
+    } else if (audio_context && audio_context.state === "running") {
+        audio_unlocked = true;
+    }
+    return audio_context;
+}
 
-    if (audio_context.state === "suspended") audio_context.resume();
+function unlockAudioContext() {
+    let audio_context = resumeAudioContext();
+    if (!audio_context || audio_unlocked) return audio_context;
+
+    try {
+        let source = audio_context.createBufferSource();
+        source.buffer = audio_context.createBuffer(1, 1, audio_context.sampleRate);
+        source.connect(audio_context.destination);
+        source.start(0);
+        audio_unlocked = audio_context.state === "running";
+    } catch (error) {
+        audio_unlocked = false;
+    }
+    return audio_context;
+}
+
+function initializeAudioUnlockHandlers() {
+    let unlock = () => unlockAudioContext();
+    document.addEventListener("pointerdown", unlock, {capture: true, passive: true});
+    document.addEventListener("touchstart", unlock, {capture: true, passive: true});
+    document.addEventListener("keydown", unlock, {capture: true});
+    document.addEventListener("visibilitychange", function () {
+        if (!document.hidden && first_click) resumeAudioContext();
+    });
+}
+
+function playFallbackSound(name, volume_divisor) {
+    let src = audio_sources[name];
+    if (!src || volume <= 0) return null;
+
+    let audio = new Audio(src);
+    audio.volume = Math.min(1, Math.max(0, volume / volume_divisor));
+    audio.preload = "auto";
+    fallback_audio_nodes.push(audio);
+
+    let cleanup = () => {
+        fallback_audio_nodes = fallback_audio_nodes.filter(node => node !== audio);
+    };
+    audio.addEventListener("ended", cleanup, {once: true});
+    audio.addEventListener("error", cleanup, {once: true});
+    setTimeout(cleanup, 5000);
+
+    audio.play().catch(cleanup);
+    return audio;
+}
+
+function playSound(name, volume_divisor = 300) {
+    let audio_context = resumeAudioContext();
+    let buffer = audio_buffers[name];
+    if (volume <= 0) return null;
+    if (!audio_context || !buffer) return playFallbackSound(name, volume_divisor);
+    if (audio_context.state !== "running") return playFallbackSound(name, volume_divisor);
 
     let source = audio_context.createBufferSource();
     let gain = audio_context.createGain();
@@ -1722,9 +1785,8 @@ function getClickTarget(event) {
 
 canvas.addEventListener('mousedown', function (event) {
     if (event.button !== 0) return;
+    unlockAudioContext();
     if (numAssetsToLoad > 0) return;
-    let audio_context = getMetronomeAudioContext();
-    if (audio_context && audio_context.state === "suspended") audio_context.resume();
     if (!first_click) {
         first_click = true;
         syncMetronomeScheduler();
@@ -2460,7 +2522,7 @@ function updatePing() {
 }
 
 function updateVolume() {
-    volume = $("volume-select").value;
+    volume = Number($("volume-select").value);
 
     $("volume-display").innerHTML = volume + "%";
     saveGeneralPreferences();
@@ -2474,8 +2536,7 @@ function updateMetronome() {
     metronome_enabled = $("metronome-enabled").checked;
     localStorage.setItem(metronome_storage_key, metronome_enabled);
     if (metronome_enabled) {
-        let audio_context = getMetronomeAudioContext();
-        if (audio_context && audio_context.state === "suspended") audio_context.resume();
+        unlockAudioContext();
     }
     syncMetronomeScheduler();
 }
@@ -2643,6 +2704,7 @@ function preloadAudio(obj_src, obj_sound, prefix, ext) {
     for (let i in obj_src) {
         if (typeof obj_src[i] === "string") {
             let src = obj_src[i] ? `${prefix}${obj_src[i]}` : `${prefix}${i}${ext}`;
+            audio_sources[i] = src;
             let audio_context = getMetronomeAudioContext();
             if (!audio_context || !window.fetch) {
                 numAssetsToLoad -= 1;
@@ -2667,6 +2729,7 @@ function preloadAudio(obj_src, obj_sound, prefix, ext) {
 }
 
 function bootTrainer() {
+    initializeAudioUnlockHandlers();
     init();
     resize();
     window.addEventListener("load", resize, {once: true});
