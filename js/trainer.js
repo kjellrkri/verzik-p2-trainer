@@ -61,9 +61,22 @@ const weapons = {
     "SCYTHE": scythe,
     "WHIP": whip
 };
+function angleToward(from, to) {
+    return Math.atan2(to.y - from.y, to.x - from.x);
+}
 const spawn_locations = {
-    left: {x: 3, y: 5, angle: 0},
-    right: {x: 11, y: 5, angle: Math.PI}
+    nw: {x: 3, y: 2},
+    sw: {x: 3, y: 8},
+    se: {x: 11, y: 8},
+    ne: {x: 11, y: 2}
+};
+spawn_locations.nw.angle = angleToward(spawn_locations.nw, spawn_locations.se);
+spawn_locations.sw.angle = angleToward(spawn_locations.sw, spawn_locations.ne);
+spawn_locations.se.angle = angleToward(spawn_locations.se, spawn_locations.nw);
+spawn_locations.ne.angle = angleToward(spawn_locations.ne, spawn_locations.sw);
+const legacy_spawn_locations = {
+    left: "nw",
+    right: "se"
 };
 
 var booleans = {
@@ -77,7 +90,7 @@ var booleans = {
 
 var values = {
     "weapon-select": "SCYTHE",
-    "spawn-location": "left",
+    "spawn-location": "nw",
     "tile-marker-type": "3",
     "color-tile-marker": "#ffffff",
     "color-verzik-marker": "#000000",
@@ -130,8 +143,12 @@ function loadGeneralPreferences() {
         if (["SCYTHE", "WHIP"].includes(saved.values?.["weapon-select"])) {
             values["weapon-select"] = saved.values["weapon-select"];
         }
-        if (Object.keys(spawn_locations).includes(saved.values?.["spawn-location"])) {
-            values["spawn-location"] = saved.values["spawn-location"];
+        let saved_spawn_location = saved.values?.["spawn-location"];
+        if (legacy_spawn_locations[saved_spawn_location]) {
+            saved_spawn_location = legacy_spawn_locations[saved_spawn_location];
+        }
+        if (Object.keys(spawn_locations).includes(saved_spawn_location)) {
+            values["spawn-location"] = saved_spawn_location;
         }
         if (["none", "1", "2", "3"].includes(saved.values?.["tile-marker-type"])) {
             values["tile-marker-type"] = saved.values["tile-marker-type"];
@@ -2468,7 +2485,7 @@ function reset() {
     dead = false;
     victorious = false;
 
-    let spawn_location = spawn_locations[values["spawn-location"]] || spawn_locations.left;
+    let spawn_location = spawn_locations[values["spawn-location"]] || spawn_locations.nw;
     p1 = new Player(spawn_location);
     p1.anim_angle = spawn_location.angle;
     verzik = new NPC({x:6, y:4}, 3);
