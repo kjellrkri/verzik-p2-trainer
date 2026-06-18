@@ -7,11 +7,6 @@ const sounds_ext = ".m4a";
 var numAssetsToLoad = 0;
 var imgs = {};
 const makeAnimationFrames = count => Array.from({length: count}, (_, i) => String(i));
-const acid_splat_animation_frames = {
-    start: makeAnimationFrames(4),
-    landed: makeAnimationFrames(12),
-    end: makeAnimationFrames(4)
-};
 const nylocas_animation_frames = makeAnimationFrames(12);
 const nylocas_death_animation_frames = {
     hagios: makeAnimationFrames(26),
@@ -23,7 +18,7 @@ const nylocas_death_duration_cycles = Math.max(
 const nylocas_death_sound_cycle = Math.floor(nylocas_death_duration_cycles / 4);
 const img_ = {
     tile_board: "",
-    acid_splat: acid_splat_animation_frames,
+    acid_splat: "",
     magic_projectile: ["0","1","2","3","4","5","6","7","8","9","10"],
     nylocas: {
         hagios: nylocas_animation_frames,
@@ -58,7 +53,6 @@ const cycle_length = 100; // .1 seconds per animation cycle, 10 fps
 const cycles_per_tick = 6;
 const tick_length = cycle_length * cycles_per_tick;
 const poison_pool_duration_ticks = 12;
-const poison_pool_duration_cycles = poison_pool_duration_ticks * cycles_per_tick;
 const nylocas_special_duration_ticks = 12;
 const board_width = 15;  // # game tiles wide
 const board_height = 11; // # game tiles high
@@ -1517,44 +1511,11 @@ class PoisonPool {
         return this.ticks_remaining > 0;
     }
 
-    getAnimationFrame() {
-        let age_cycles = (poison_pool_duration_ticks - this.ticks_remaining) * cycles_per_tick + cycles;
-        let start_frames = imgs.acid_splat.start;
-        let landed_frames = imgs.acid_splat.landed;
-        let end_frames = imgs.acid_splat.end;
-        let end_start_cycle = poison_pool_duration_cycles - end_frames.length;
-
-        if (age_cycles >= end_start_cycle) {
-            return {
-                phase: "end",
-                index: Math.min(end_frames.length - 1, age_cycles - end_start_cycle),
-                image: end_frames[Math.min(end_frames.length - 1, age_cycles - end_start_cycle)]
-            };
-        }
-        if (age_cycles < start_frames.length) {
-            return {
-                phase: "start",
-                index: age_cycles,
-                image: start_frames[age_cycles]
-            };
-        }
-        let landed_index = Math.min(landed_frames.length - 1, age_cycles - start_frames.length);
-        return {
-            phase: "landed",
-            index: landed_index,
-            image: landed_frames[landed_index]
-        };
-    }
-
     draw(context) {
         if (!imgs.acid_splat) return;
 
-        let animation_frame = this.getAnimationFrame();
-        if (!animation_frame.image) return;
-
         let size = tile_size;
-        let sprite = getScaledSprite(`acid_splat_${animation_frame.phase}_${animation_frame.index}`,
-                animation_frame.image, size, size);
+        let sprite = getScaledSprite("acid_splat", imgs.acid_splat, size, size);
         let center_x = (this.tile.x + .5) * tile_size;
         let center_y = (this.tile.y + .5) * tile_size;
 
