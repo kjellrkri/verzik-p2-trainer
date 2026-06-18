@@ -44,6 +44,7 @@ const sounds_ = {
     verzik_bounce: "",
     verzik_hit: "",
     crab_spawn: "crab_spawn.wav",
+    nylocas_death: "nylocas_death.wav",
     magic_spark: "magic_spark_581.wav"
 };
 
@@ -1553,7 +1554,10 @@ function drawPoisonPools() {
 function tickNylocasSpecial() {
     if (nylocas_special_ticks_remaining > 0) {
         nylocas_special_ticks_remaining -= 1;
-        if (nylocas_special_ticks_remaining === 0) nylocas_special_death_start_tick = ticks;
+        if (nylocas_special_ticks_remaining === 0) {
+            nylocas_special_death_start_tick = ticks;
+            playSound("nylocas_death", 100);
+        }
     } else if (nylocas_special_death_start_tick !== null) {
         let elapsed_cycles = (ticks - nylocas_special_death_start_tick) * cycles_per_tick;
         if (elapsed_cycles >= nylocas_death_duration_cycles) nylocas_special_death_start_tick = null;
