@@ -15,6 +15,7 @@ const nylocas_death_animation_frames = {
 };
 const nylocas_death_duration_cycles = Math.max(
         ...Object.values(nylocas_death_animation_frames).map(frames => frames.length));
+const nylocas_death_sound_cycle = Math.floor(nylocas_death_duration_cycles / 2);
 const img_ = {
     tile_board: "",
     acid_splat: "",
@@ -281,6 +282,7 @@ var click_x;
 var poison_pools;
 var nylocas_special_ticks_remaining;
 var nylocas_special_death_start_tick;
+var nylocas_special_death_sound_played;
 
 var first_click;
 var first_attack;
@@ -1264,6 +1266,7 @@ class NPC {
         this.blue_specials_since_crab = 0;
         nylocas_special_ticks_remaining = nylocas_special_duration_ticks;
         nylocas_special_death_start_tick = null;
+        nylocas_special_death_sound_played = false;
         this.range_att = false;
         this.range_bomb = null;
         this.animation_frames = [...imgs.verzik.attack];
@@ -1556,10 +1559,14 @@ function tickNylocasSpecial() {
         nylocas_special_ticks_remaining -= 1;
         if (nylocas_special_ticks_remaining === 0) {
             nylocas_special_death_start_tick = ticks;
-            playSound("nylocas_death", 100);
+            nylocas_special_death_sound_played = false;
         }
     } else if (nylocas_special_death_start_tick !== null) {
         let elapsed_cycles = (ticks - nylocas_special_death_start_tick) * cycles_per_tick;
+        if (!nylocas_special_death_sound_played && elapsed_cycles >= nylocas_death_sound_cycle) {
+            playSound("nylocas_death", 100);
+            nylocas_special_death_sound_played = true;
+        }
         if (elapsed_cycles >= nylocas_death_duration_cycles) nylocas_special_death_start_tick = null;
     }
 }
@@ -2564,6 +2571,7 @@ function reset() {
     poison_pools = [];
     nylocas_special_ticks_remaining = 0;
     nylocas_special_death_start_tick = null;
+    nylocas_special_death_sound_played = false;
 
     recent_click = null;
     
