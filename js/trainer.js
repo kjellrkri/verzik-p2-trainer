@@ -123,7 +123,7 @@ var values = {
 };
 
 var ping = 50;
-var volume = 50;
+var volume = 15;
 const general_preferences_storage_key = "verzik-general-preferences-v1";
 const metronome_storage_key = "verzik-game-tick-metronome-v1";
 var metronome_enabled = localStorage.getItem(metronome_storage_key) === "true";
@@ -1270,7 +1270,7 @@ class NPC {
         this.range_att = false;
         this.range_bomb = null;
         this.animation_frames = [...imgs.verzik.attack];
-        playSound("crab_spawn", 100);
+        playSound("crab_spawn", 200);
     }
 
     hit(dmg) {
