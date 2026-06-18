@@ -38,6 +38,8 @@ const img_ = {
 };
 var sounds = {};
 var audio_buffers = {};
+var audio_sources = {};
+var fallback_audio_nodes = [];
 const sounds_ = {
     scythe: "",
     whip: "",
@@ -131,17 +133,14 @@ const general_preferences_storage_key = "verzik-general-preferences-v1";
 const metronome_storage_key = "verzik-game-tick-metronome-v1";
 var metronome_enabled = localStorage.getItem(metronome_storage_key) === "true";
 var metronome_audio_context = null;
-var audio_output_node = null;
 var audio_unlocked = false;
 var audio_unlock_pending = false;
-var audio_resume_promise = null;
 var metronome_scheduler_timer = null;
 var metronome_next_tock_time = 0;
 var metronome_scheduled_oscillators = [];
 const metronome_schedule_interval_ms = 1000;
 const metronome_schedule_ahead_seconds = 12;
 const metronome_cleanup_padding_seconds = .2;
-const sound_effect_fade_seconds = .005;
 const visual_metronome_storage_key = "verzik-visual-metronome-v1";
 const saved_visual_metronome = localStorage.getItem(visual_metronome_storage_key);
 var visual_metronome_enabled = saved_visual_metronome === null ? true : saved_visual_metronome === "true";
@@ -571,43 +570,21 @@ function getMetronomeAudioContext() {
     return metronome_audio_context;
 }
 
-function getAudioOutputNode() {
-    let audio_context = getMetronomeAudioContext();
-    if (!audio_context) return null;
-    if (!audio_output_node) {
-        audio_output_node = audio_context.createDynamicsCompressor();
-        audio_output_node.threshold.setValueAtTime(-10, audio_context.currentTime);
-        audio_output_node.knee.setValueAtTime(18, audio_context.currentTime);
-        audio_output_node.ratio.setValueAtTime(8, audio_context.currentTime);
-        audio_output_node.attack.setValueAtTime(.003, audio_context.currentTime);
-        audio_output_node.release.setValueAtTime(.12, audio_context.currentTime);
-        audio_output_node.connect(audio_context.destination);
-    }
-    return audio_output_node;
-}
-
 function resumeAudioContext() {
     let audio_context = getMetronomeAudioContext();
-    if (!audio_context) return null;
-
-    if (audio_context.state === "running") {
-        audio_unlocked = true;
-        audio_unlock_pending = false;
-        audio_resume_promise = null;
-    } else if (audio_context.state === "suspended" && !audio_resume_promise) {
+    if (audio_context && audio_context.state === "suspended") {
         audio_unlock_pending = true;
-        audio_resume_promise = audio_context.resume()
+        audio_context.resume()
             .then(() => {
                 audio_unlocked = audio_context.state === "running";
-                return audio_context;
+                audio_unlock_pending = false;
             })
             .catch(() => {
-                return audio_context;
-            })
-            .finally(() => {
                 audio_unlock_pending = false;
-                audio_resume_promise = null;
             });
+    } else if (audio_context && audio_context.state === "running") {
+        audio_unlocked = true;
+        audio_unlock_pending = false;
     }
     return audio_context;
 }
@@ -626,74 +603,41 @@ function initializeAudioUnlockHandlers() {
     });
 }
 
-function startBufferedSound(audio_context, buffer, volume_divisor) {
-    let source = audio_context.createBufferSource();
-    let gain = audio_context.createGain();
-    let now = audio_context.currentTime;
-    let target_gain = Math.min(1, Math.max(0, volume / volume_divisor));
-    let duration = buffer.duration || 0;
-    let fade = Math.min(sound_effect_fade_seconds, Math.max(.001, duration / 4));
+function playFallbackSound(name, volume_divisor) {
+    let src = audio_sources[name];
+    if (!src || volume <= 0) return null;
 
-    source.buffer = buffer;
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(target_gain, now + fade);
-    if (duration > fade * 2) {
-        gain.gain.setValueAtTime(target_gain, now + duration - fade);
-        gain.gain.linearRampToValueAtTime(0, now + duration);
-    }
-    source.connect(gain);
-    gain.connect(getAudioOutputNode() || audio_context.destination);
-    source.start(now);
-    return source;
+    let audio = new Audio(src);
+    audio.volume = Math.min(1, Math.max(0, volume / volume_divisor));
+    audio.preload = "auto";
+    fallback_audio_nodes.push(audio);
+
+    let cleanup = () => {
+        fallback_audio_nodes = fallback_audio_nodes.filter(node => node !== audio);
+    };
+    audio.addEventListener("ended", cleanup, {once: true});
+    audio.addEventListener("error", cleanup, {once: true});
+    setTimeout(cleanup, 5000);
+
+    audio.play().catch(cleanup);
+    return audio;
 }
 
 function playSound(name, volume_divisor = 300) {
     let audio_context = resumeAudioContext();
     let buffer = audio_buffers[name];
-    if (volume <= 0 || !audio_context || !buffer) return null;
+    if (volume <= 0) return null;
+    if (!audio_context || !buffer) return playFallbackSound(name, volume_divisor);
+    if (audio_context.state !== "running") return playFallbackSound(name, volume_divisor);
 
-    if (audio_context.state === "running") {
-        return startBufferedSound(audio_context, buffer, volume_divisor);
-    }
-
-    if (audio_resume_promise) {
-        audio_resume_promise.then(() => {
-            if (audio_context.state === "running") {
-                startBufferedSound(audio_context, buffer, volume_divisor);
-            }
-        });
-    }
-    return null;
-}
-
-function sanitizeAudioBuffer(buffer) {
-    let peak = 0;
-    for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
-        let samples = buffer.getChannelData(channel);
-        for (let i = 0; i < samples.length; i++) {
-            peak = Math.max(peak, Math.abs(samples[i]));
-        }
-    }
-
-    let normalize = peak > 1 ? .95 / peak : 1;
-    let fade_samples = Math.min(
-        Math.floor(buffer.sampleRate * sound_effect_fade_seconds),
-        Math.floor(buffer.length / 4)
-    );
-
-    for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
-        let samples = buffer.getChannelData(channel);
-        for (let i = 0; i < samples.length; i++) {
-            samples[i] *= normalize;
-        }
-        for (let i = 0; i < fade_samples; i++) {
-            let fade = i / fade_samples;
-            samples[i] *= fade;
-            samples[samples.length - 1 - i] *= fade;
-        }
-    }
-
-    return buffer;
+    let source = audio_context.createBufferSource();
+    let gain = audio_context.createGain();
+    source.buffer = buffer;
+    gain.gain.setValueAtTime(Math.min(1, Math.max(0, volume / volume_divisor)), audio_context.currentTime);
+    source.connect(gain);
+    gain.connect(audio_context.destination);
+    source.start();
+    return source;
 }
 
 function scheduleMetronomeTock(time) {
@@ -710,7 +654,7 @@ function scheduleMetronomeTock(time) {
     gain.gain.exponentialRampToValueAtTime(.0001, time + .06);
 
     oscillator.connect(gain);
-    gain.connect(getAudioOutputNode() || audio_context.destination);
+    gain.connect(audio_context.destination);
     oscillator.start(time);
     oscillator.stop(time + .065);
     metronome_scheduled_oscillators.push(oscillator);
@@ -809,9 +753,9 @@ function playWebSwooshSound() {
 
     noise.connect(filter);
     filter.connect(gain);
-    gain.connect(getAudioOutputNode() || audio_context.destination);
+    gain.connect(audio_context.destination);
     snap.connect(snap_gain);
-    snap_gain.connect(getAudioOutputNode() || audio_context.destination);
+    snap_gain.connect(audio_context.destination);
     noise.start(now);
     noise.stop(now + duration);
     snap.start(now);
@@ -2754,6 +2698,7 @@ function preloadAudio(obj_src, obj_sound, prefix, ext) {
     for (let i in obj_src) {
         if (typeof obj_src[i] === "string") {
             let src = obj_src[i] ? `${prefix}${obj_src[i]}` : `${prefix}${i}${ext}`;
+            audio_sources[i] = src;
             let audio_context = getMetronomeAudioContext();
             if (!audio_context || !window.fetch) {
                 numAssetsToLoad -= 1;
@@ -2764,9 +2709,8 @@ function preloadAudio(obj_src, obj_sound, prefix, ext) {
                 .then(response => response.arrayBuffer())
                 .then(data => audio_context.decodeAudioData(data))
                 .then(buffer => {
-                    let clean_buffer = sanitizeAudioBuffer(buffer);
-                    obj_sound[i] = clean_buffer;
-                    audio_buffers[i] = clean_buffer;
+                    obj_sound[i] = buffer;
+                    audio_buffers[i] = buffer;
                 })
                 .catch(error => {
                     console.warn(`Could not preload sound ${src}.`, error);
