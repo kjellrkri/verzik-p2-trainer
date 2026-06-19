@@ -57,6 +57,7 @@ const tick_length = cycle_length * cycles_per_tick;
 const initial_verzik_attack_cycle = 2;
 const visual_metronome_danger_phase = 1;
 const poison_pool_duration_ticks = 12;
+const poison_pool_damage = 12;
 const nylocas_special_duration_ticks = 12;
 const board_width = 15;  // # game tiles wide
 const board_height = 11; // # game tiles high
@@ -317,6 +318,7 @@ var p1;
 var verzik;
 
 var recent_click;
+var acid_hitsplat_sprite_cache = {};
 
 function $(id) {
     return document.getElementById(id);
@@ -959,13 +961,14 @@ class Player  {
         return damage;
     }
 
-    hit(dmg) {
+    hit(dmg, damage_type = "normal") {
         damage_taken += dmg;
         if (!unlimited_player_hp_enabled) this.hp -= dmg;
         this.hp_bar.display();
-        this.hitsplat = new HitSplat(dmg);
+        this.hitsplat = damage_type === "acid" ? new AcidHitSplat(dmg) : new HitSplat(dmg);
+        let hitsplat = this.hitsplat;
         setTimeout(()=>{
-            this.hitsplat = null;
+            if (this.hitsplat === hitsplat) this.hitsplat = null;
         }, 2 * tick_length);
         if (this.hp <= 0) death();
     }
@@ -1122,6 +1125,91 @@ class HitSplat {
     drawInPlace(context) {
         drawImgCentered(context, this.img);
     }
+}
+
+class AcidHitSplat {
+    constructor(dmg) {
+        this.img = getAcidHitSplatSprite(dmg);
+    }
+
+    drawInPlace(context) {
+        drawImgCentered(context, this.img);
+    }
+}
+
+function getAcidHitSplatSprite(dmg) {
+    let key = String(dmg);
+    if (acid_hitsplat_sprite_cache[key]) return acid_hitsplat_sprite_cache[key];
+
+    let sprite = document.createElement("canvas");
+    sprite.width = 48;
+    sprite.height = 48;
+    let context = sprite.getContext("2d");
+    context.imageSmoothingEnabled = false;
+
+    let burst_points = [
+        21, 12, 17, 6, 23, 13, 28, 5,
+        27, 15, 39, 10, 31, 20, 43, 24,
+        31, 28, 39, 38, 27, 33, 24, 45,
+        20, 33, 9, 39, 16, 28, 4, 24,
+        16, 20, 9, 10
+    ];
+    drawJaggedSpritePolygon(context, burst_points, "#002b00", "#001400", 2);
+
+    let body_points = [
+        22, 15, 15, 9, 22, 17, 28, 10,
+        27, 18, 36, 15, 29, 22, 39, 24,
+        29, 26, 36, 33, 27, 30, 24, 38,
+        20, 30, 12, 34, 18, 26, 9, 24,
+        18, 22, 12, 15
+    ];
+    drawJaggedSpritePolygon(context, body_points, "#00a000", "#005600", 2);
+
+    let highlight_points = [
+        22, 18, 17, 13, 23, 19, 27, 14,
+        27, 20, 33, 18, 29, 23, 34, 24,
+        29, 25, 32, 30, 27, 28, 24, 34,
+        21, 28, 16, 31, 19, 25, 14, 24,
+        19, 22, 16, 17
+    ];
+    drawJaggedSpritePolygon(context, highlight_points, "#00ff00", "#00c000", 1);
+
+    let flecks = [
+        [7, 17, "#00ff00"], [8, 29, "#00d800"], [13, 7, "#009000"],
+        [15, 38, "#00ff00"], [35, 8, "#00c800"], [40, 17, "#00ff00"],
+        [39, 31, "#00e000"], [31, 41, "#00a000"], [23, 7, "#00ff00"]
+    ];
+    for (let fleck of flecks) {
+        context.fillStyle = fleck[2];
+        context.fillRect(fleck[0], fleck[1], 2, 2);
+    }
+
+    context.font = "bold 19px Arial";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.lineJoin = "round";
+    context.lineWidth = 4;
+    context.strokeStyle = "#001400";
+    context.fillStyle = "#ecffe8";
+    context.strokeText(key, 24, 25);
+    context.fillText(key, 24, 25);
+
+    acid_hitsplat_sprite_cache[key] = sprite;
+    return sprite;
+}
+
+function drawJaggedSpritePolygon(context, points, fill, stroke, stroke_width) {
+    context.beginPath();
+    context.moveTo(points[0], points[1]);
+    for (let i = 2; i < points.length; i += 2) {
+        context.lineTo(points[i], points[i + 1]);
+    }
+    context.closePath();
+    context.fillStyle = fill;
+    context.fill();
+    context.lineWidth = stroke_width;
+    context.strokeStyle = stroke;
+    context.stroke();
 }
 
 class StunBirds {
@@ -1606,7 +1694,7 @@ function tickPoisonPools() {
 
 function damagePlayerInPoisonPool() {
     if (poison_pools.some(pool => pool.tile.dist(p1.position) === 0)) {
-        p1.hit(5);
+        p1.hit(poison_pool_damage, "acid");
     }
 }
 
