@@ -320,9 +320,27 @@ var verzik;
 
 var recent_click;
 var acid_hitsplat_number_cache = {};
+const acid_hitsplat_font_name = "FunOrb TerraPhoenix B12";
+const acid_hitsplat_font_stack = `"${acid_hitsplat_font_name}", "RuneScape UF Regular", serif`;
+var acid_hitsplat_font_ready = false;
 
 function $(id) {
     return document.getElementById(id);
+}
+
+function loadAcidHitSplatFont() {
+    if (!document.fonts || !document.fonts.load) {
+        acid_hitsplat_font_ready = true;
+        return;
+    }
+
+    document.fonts.load(`29px "${acid_hitsplat_font_name}"`).then(() => {
+        acid_hitsplat_font_ready = true;
+        acid_hitsplat_number_cache = {};
+    }).catch(error => {
+        console.warn("Could not load acid hitsplat font.", error);
+        acid_hitsplat_font_ready = true;
+    });
 }
 
 function getCustomTileMarkerKey(x, y) {
@@ -1140,7 +1158,8 @@ class AcidHitSplat {
 
 function getAcidHitSplatSprite(dmg) {
     let key = String(dmg);
-    if (acid_hitsplat_number_cache[key]) return acid_hitsplat_number_cache[key];
+    let can_cache = acid_hitsplat_font_ready || !document.fonts || !document.fonts.load;
+    if (can_cache && acid_hitsplat_number_cache[key]) return acid_hitsplat_number_cache[key];
 
     let sprite = document.createElement("canvas");
     sprite.width = 48;
@@ -1152,56 +1171,22 @@ function getAcidHitSplatSprite(dmg) {
         context.drawImage(imgs.acid_hitsplat, 0, 1, 48, 46);
     }
 
-    drawPixelNumber(context, key, 24, 25, 4);
+    drawAcidHitSplatNumber(context, key, 24, 25);
 
-    acid_hitsplat_number_cache[key] = sprite;
+    if (can_cache) acid_hitsplat_number_cache[key] = sprite;
     return sprite;
 }
 
-function drawPixelNumber(context, text, center_x, center_y, pixel_size) {
-    const digit_patterns = {
-        "0": ["111", "101", "101", "101", "101", "101", "111"],
-        "1": ["010", "110", "010", "010", "010", "010", "111"],
-        "2": ["111", "001", "001", "111", "100", "100", "111"],
-        "3": ["111", "001", "001", "111", "001", "001", "111"],
-        "4": ["101", "101", "101", "111", "001", "001", "001"],
-        "5": ["111", "100", "100", "111", "001", "001", "111"],
-        "6": ["111", "100", "100", "111", "101", "101", "111"],
-        "7": ["111", "001", "001", "010", "010", "010", "010"],
-        "8": ["111", "101", "101", "111", "101", "101", "111"],
-        "9": ["111", "101", "101", "111", "001", "001", "111"]
-    };
-    let digits = String(text).split("").filter(digit => digit_patterns[digit]);
-    if (!digits.length) return;
-
-    let digit_width = 3;
-    let digit_height = 7;
-    let gap = 1;
-    let total_width = (digits.length * digit_width + (digits.length - 1) * gap) * pixel_size;
-    let total_height = digit_height * pixel_size;
-    let start_x = Math.round(center_x - total_width / 2);
-    let start_y = Math.round(center_y - total_height / 2);
-
-    drawPixelNumberLayer(context, digits, digit_patterns, start_x + 2, start_y + 2, pixel_size, "#000000");
-    drawPixelNumberLayer(context, digits, digit_patterns, start_x, start_y, pixel_size, "#ffffff");
-}
-
-function drawPixelNumberLayer(context, digits, patterns, start_x, start_y, pixel_size, color) {
-    context.fillStyle = color;
-    for (let digit_index = 0; digit_index < digits.length; digit_index++) {
-        let pattern = patterns[digits[digit_index]];
-        let digit_x = start_x + digit_index * 4 * pixel_size;
-        for (let row = 0; row < pattern.length; row++) {
-            for (let col = 0; col < pattern[row].length; col++) {
-                if (pattern[row][col] !== "1") continue;
-                context.fillRect(
-                        digit_x + col * pixel_size,
-                        start_y + row * pixel_size,
-                        pixel_size,
-                        pixel_size);
-            }
-        }
-    }
+function drawAcidHitSplatNumber(context, text, center_x, center_y) {
+    context.save();
+    context.font = `29px ${acid_hitsplat_font_stack}`;
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillStyle = "#000000";
+    context.fillText(String(text), center_x + 1, center_y + 1);
+    context.fillStyle = "#ffffff";
+    context.fillText(String(text), center_x, center_y);
+    context.restore();
 }
 
 class StunBirds {
@@ -2778,6 +2763,7 @@ function reset() {
 function init() {
     click_x = new ClickX();
     initializeColorPresetMenu();
+    loadAcidHitSplatFont();
     
     initFormData();
 

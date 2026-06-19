@@ -12,6 +12,13 @@
     src: local('RuneScape UF Regular'), url('runescape_uf.woff') format('woff');
 }
 
+@font-face {
+    font-family: 'FunOrb TerraPhoenix B12';
+    font-style: normal;
+    font-weight: normal;
+    src: url('../fonts/FunOrb-TerraPhoenix-B12.otf') format('opentype');
+}
+
 :root {
     --bg: #060606;
     --panel: #171615;
