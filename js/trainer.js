@@ -1317,7 +1317,7 @@ class NPC {
                 }
                 break;
             case 1:
-                this.target_loc = this.attack_target.position;
+                this.target_loc = new Point(this.attack_target.position.x, this.attack_target.position.y);
                 this.bounce_att = this.checkInBounceRange(this.target_loc); //bounce attack if in melee range
                 this.range_att = !this.bounce_att;  //range attack if outside of bounce range
                 break;
@@ -1340,13 +1340,15 @@ class NPC {
             return;
         }
         if (this.bounce_att) {  //bounce attack if in melee range
-            this.bounceAttack(this.attack_target);
+            this.bounceAttack(this.attack_target, this.target_loc);
         } else {                //range attack if outside of bounce range
             this.rangeAttack(this.attack_target);
         }
     }
 
     checkInBounceRange(p) {
+        if (this.isTileUnderNpc(p)) return true;
+
         let tiles = this.getTilesInAttackRange(1);
         let returnBool = false;
 
@@ -1360,15 +1362,64 @@ class NPC {
         return returnBool;
     }
 
-    bounceAttack(attack_target) {
-        let bounce_tile = null;
+    isTileUnderNpc(p) {
+        return p
+                && p.x >= this.pos.x
+                && p.x < this.pos.x + this.size
+                && p.y >= this.pos.y
+                && p.y < this.pos.y + this.size;
+    }
+
+    getUnderNpcBounceTile(source_tile, range = 4) {
+        if (!this.isTileUnderNpc(source_tile)) return null;
+
+        let center_x = this.pos.x + Math.floor(this.size / 2);
+        let center_y = this.pos.y + Math.floor(this.size / 2);
+        let side_tiles = {
+            west: new Point(this.pos.x - range, source_tile.y),
+            east: new Point(this.pos.x + this.size + range - 1, source_tile.y),
+            north: new Point(source_tile.x, this.pos.y - range),
+            south: new Point(source_tile.x, this.pos.y + this.size + range - 1)
+        };
+
+        if (source_tile.x === center_x && source_tile.y === center_y) {
+            let sides = Object.keys(side_tiles);
+            return side_tiles[sides[Math.floor(Math.random() * sides.length)]];
+        }
+
+        let distances = {
+            west: source_tile.x - this.pos.x,
+            east: this.pos.x + this.size - 1 - source_tile.x,
+            north: source_tile.y - this.pos.y,
+            south: this.pos.y + this.size - 1 - source_tile.y
+        };
+        let min_distance = Math.min(...Object.values(distances));
+        let closest_sides = Object.keys(distances).filter(side => distances[side] === min_distance);
+        let best_side = closest_sides[0];
+        let best_dist = source_tile.distBiased(side_tiles[best_side]);
+
+        for (let side of closest_sides.slice(1)) {
+            let dist = source_tile.distBiased(side_tiles[side]);
+            if (dist < best_dist) {
+                best_dist = dist;
+                best_side = side;
+            }
+        }
+
+        return side_tiles[best_side];
+    }
+
+    bounceAttack(attack_target, source_tile = attack_target.position) {
+        let bounce_tile = this.getUnderNpcBounceTile(source_tile);
         let tiles = this.getTilesAtRange(4);
         let min = 999;
-        for (let tile of tiles) {
-            let dist = attack_target.position.distBiased(tile);
-            if (dist < min) {
-                min = dist;
-                bounce_tile = tile;
+        if (!bounce_tile) {
+            for (let tile of tiles) {
+                let dist = source_tile.distBiased(tile);
+                if (dist < min) {
+                    min = dist;
+                    bounce_tile = tile;
+                }
             }
         }
 
