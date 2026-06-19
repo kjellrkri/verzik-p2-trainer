@@ -1152,21 +1152,56 @@ function getAcidHitSplatSprite(dmg) {
         context.drawImage(imgs.acid_hitsplat, 0, 1, 48, 46);
     }
 
-    context.font = "bold 19px Arial";
-    context.textAlign = "center";
-    context.textBaseline = "middle";
-    context.lineJoin = "round";
-    context.lineWidth = 5;
-    context.strokeStyle = "#000000";
-    context.strokeText(key, 24, 25);
-    context.lineWidth = 2;
-    context.strokeStyle = "#ffffff";
-    context.strokeText(key, 24, 25);
-    context.fillStyle = "#ff0000";
-    context.fillText(key, 24, 25);
+    drawPixelNumber(context, key, 24, 25, 4);
 
     acid_hitsplat_number_cache[key] = sprite;
     return sprite;
+}
+
+function drawPixelNumber(context, text, center_x, center_y, pixel_size) {
+    const digit_patterns = {
+        "0": ["111", "101", "101", "101", "101", "101", "111"],
+        "1": ["010", "110", "010", "010", "010", "010", "111"],
+        "2": ["111", "001", "001", "111", "100", "100", "111"],
+        "3": ["111", "001", "001", "111", "001", "001", "111"],
+        "4": ["101", "101", "101", "111", "001", "001", "001"],
+        "5": ["111", "100", "100", "111", "001", "001", "111"],
+        "6": ["111", "100", "100", "111", "101", "101", "111"],
+        "7": ["111", "001", "001", "010", "010", "010", "010"],
+        "8": ["111", "101", "101", "111", "101", "101", "111"],
+        "9": ["111", "101", "101", "111", "001", "001", "111"]
+    };
+    let digits = String(text).split("").filter(digit => digit_patterns[digit]);
+    if (!digits.length) return;
+
+    let digit_width = 3;
+    let digit_height = 7;
+    let gap = 1;
+    let total_width = (digits.length * digit_width + (digits.length - 1) * gap) * pixel_size;
+    let total_height = digit_height * pixel_size;
+    let start_x = Math.round(center_x - total_width / 2);
+    let start_y = Math.round(center_y - total_height / 2);
+
+    drawPixelNumberLayer(context, digits, digit_patterns, start_x + 2, start_y + 2, pixel_size, "#000000");
+    drawPixelNumberLayer(context, digits, digit_patterns, start_x, start_y, pixel_size, "#ffffff");
+}
+
+function drawPixelNumberLayer(context, digits, patterns, start_x, start_y, pixel_size, color) {
+    context.fillStyle = color;
+    for (let digit_index = 0; digit_index < digits.length; digit_index++) {
+        let pattern = patterns[digits[digit_index]];
+        let digit_x = start_x + digit_index * 4 * pixel_size;
+        for (let row = 0; row < pattern.length; row++) {
+            for (let col = 0; col < pattern[row].length; col++) {
+                if (pattern[row][col] !== "1") continue;
+                context.fillRect(
+                        digit_x + col * pixel_size,
+                        start_y + row * pixel_size,
+                        pixel_size,
+                        pixel_size);
+            }
+        }
+    }
 }
 
 class StunBirds {
