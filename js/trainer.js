@@ -57,8 +57,9 @@ const cycles_per_tick = 6;
 const tick_length = cycle_length * cycles_per_tick;
 const initial_verzik_attack_cycle = 2;
 const visual_metronome_danger_phase = 1;
-const poison_pool_duration_ticks = 12;
-const poison_pool_damage = 12;
+const poison_pool_duration_ticks = 15;
+const poison_pool_damage_min = 9;
+const poison_pool_damage_max = 12;
 const nylocas_special_duration_ticks = 12;
 const board_width = 15;  // # game tiles wide
 const board_height = 11; // # game tiles high
@@ -1720,9 +1721,14 @@ function tickPoisonPools() {
     poison_pools = poison_pools.filter(pool => pool.tick());
 }
 
+function rollPoisonPoolDamage() {
+    return poison_pool_damage_min
+            + Math.floor(Math.random() * (poison_pool_damage_max - poison_pool_damage_min + 1));
+}
+
 function damagePlayerInPoisonPool() {
     if (poison_pools.some(pool => pool.tile.dist(p1.position) === 0)) {
-        p1.hit(poison_pool_damage, "acid");
+        p1.hit(rollPoisonPoolDamage(), "acid");
     }
 }
 
