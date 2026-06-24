@@ -2534,12 +2534,14 @@ function drawEndStats() {
     let w = canvas.width;
     let h = canvas.height;
     let card_width = Math.min(w * .58, tile_size * 5.2);
-    let card_height = Math.max(tile_size * 1.45, 136 * draw_scale);
+    let card_height = Math.max(tile_size * 1.75, 166 * draw_scale);
     let card_x = (w - card_width) / 2;
     let card_y = (h - card_height) / 2;
     let radius = Math.max(10, 18 * draw_scale);
+    let title_font_size = Math.max(18, Math.round(27 * draw_scale));
     let label_font_size = Math.max(13, Math.round(17 * draw_scale));
     let value_font_size = Math.max(15, Math.round(21 * draw_scale));
+    let title = victorious ? "You Defeated Verzik!" : "You Have Perished!";
     let rows = [
         ["Damage taken", String(damage_taken)],
         ["Attack efficiency", `${getAttackEfficiency()}%`]
@@ -2560,12 +2562,17 @@ function drawEndStats() {
     ctxt.fillStyle = "#a73b32";
     ctxt.fillRect(card_x, card_y, card_width, Math.max(4, 6 * draw_scale));
 
+    ctxt.textBaseline = "middle";
+    ctxt.font = `800 ${title_font_size}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctxt.textAlign = "center";
+    ctxt.fillStyle = victorious ? "#f2efea" : "#e07166";
+    ctxt.fillText(title, card_x + card_width / 2, card_y + card_height * .25);
+
     let left = card_x + card_width * .12;
     let right = card_x + card_width * .88;
-    let row_gap = card_height / 3;
-    let first_y = card_y + row_gap * 1.25;
+    let row_gap = card_height / 4;
+    let first_y = card_y + card_height * .52;
 
-    ctxt.textBaseline = "middle";
     for (let i = 0; i < rows.length; i++) {
         let y = first_y + i * row_gap;
         ctxt.font = `700 ${label_font_size}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
